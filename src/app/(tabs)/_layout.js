@@ -37,7 +37,7 @@ export default function Layout() {
       >
         {tabs?.map(({name, title, icon, iconFocused}) => {
           return (
-            <Tabs.Screen name={name} options={{
+            <Tabs.Screen key={name} name={name} options={{
               title,
               tabBarIcon: ({ color, focused }) => (
                   <BottomnavIcon name={focused ? iconFocused : icon} color={color}/>
