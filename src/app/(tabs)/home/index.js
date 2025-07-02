@@ -23,7 +23,7 @@ const onPress = () => {
 export default function Page() {
   const insets = useSafeAreaInsets();
   return (
-    <View className="flex-1 w-full" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+    <View className="flex-1 w-full bg-black" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
       <Text className="text-center text-lg">Hello Expo</Text>
       <FlatList
         data={reminderData}
