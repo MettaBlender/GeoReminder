@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Ionicons from "@expo/vector-icons/Ionicons"
+import { Link } from 'expo-router';
 
-const ReminderListItem = ({item, onPress}) => {
+const ReminderListItem = ({item, onPresss}) => {
   return (
     <View className='flex-row items-center bg-grey-900 p-2.5 border-b border-gray700'>
         <View className="" >
@@ -12,9 +13,11 @@ const ReminderListItem = ({item, onPress}) => {
             <Text className="text-black text-lg font-bold">{item.titel}</Text>
             <Text className="text-black text-base">{item.description}</Text>
         </View>
-        <TouchableOpacity onPress={onPress}>
-            <Ionicons size={28} style={{ margin: -3 }} name="edit" color="white"/>
-        </TouchableOpacity>
+        <Link href="/edit" asChild>
+          <TouchableOpacity onPress={onPresss}>
+              <Ionicons size={28} style={{ margin: -3 }} name="edit" color="white"/>
+          </TouchableOpacity>
+        </Link>
     </View>
   )
 }
