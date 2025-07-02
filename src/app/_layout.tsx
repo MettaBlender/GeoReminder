@@ -10,5 +10,5 @@ export default function Layout() {
         options={{ presentation: "modal", title: "Modal" }}
       />
     </Stack>
-  )  
+  )
 }
