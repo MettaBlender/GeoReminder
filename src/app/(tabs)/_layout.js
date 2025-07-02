@@ -3,7 +3,6 @@ import { Slot, Tabs } from "expo-router";
 import { Text } from "react-native";
 import BottomnavIcon from "@/components/BottomnavIcon";
 import Header from "@/components/Header";
-import Header from "@/components/Header";
 
 export default function Layout() {
 
@@ -49,7 +48,7 @@ export default function Layout() {
         {tabs?.map(({name, title, icon, iconFocused}) => {
           return (
             <Tabs.Screen key={name} name={name} options={{
-              headerTitle: () => <Header title={title} />,              
+              headerTitle: () => <Header title={title} />,
               tabBarIcon: ({ color, focused }) => (
                   <BottomnavIcon name={focused ? iconFocused : icon} color={color}/>
                 ),
@@ -57,9 +56,7 @@ export default function Layout() {
             />
           )
         })}
-        })}
       </Tabs>
     </>
-  )
   )
 }
