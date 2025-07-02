@@ -2,6 +2,7 @@ import "@/global.css";
 import { Slot, Tabs } from "expo-router";
 import { Text } from "react-native";
 import BottomnavIcon from "@/components/BottomnavIcon";
+import Header from "@/components/Header";
 
 export default function Layout() {
 
@@ -35,6 +36,9 @@ export default function Layout() {
           tabBarStyle: {
             backgroundColor: '#000000',
           },
+          headerStyle: { backgroundColor: '#000000' },
+          headerTintColor: '#ffffff',
+          headerTitleAlign: 'center',
         }}
       >
         {tabs?.map(({name, title, icon, iconFocused}) => {
