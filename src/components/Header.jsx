@@ -1,7 +1,7 @@
 import { View, Text } from 'react-native';
 import React from 'react';
 import { MaskedView } from '@react-native-masked-view/masked-view';
-import { LinearGradient } from 'expo-linear-gradient';
+import  LinearGradient  from 'expo-linear-gradient';
 
 const Header = ({ title }) => {
   // Überprüfe, ob title definiert ist
