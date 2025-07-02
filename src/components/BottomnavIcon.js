@@ -2,7 +2,7 @@ import React from 'react'
 import { View } from 'react-native'
 import Ionicons from "@expo/vector-icons/Ionicons"
 import MaskedView from '@react-native-masked-view/masked-view'
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 
 
 const BottomnavIcon = ({ name, color, focused }) => {
@@ -24,6 +24,7 @@ const BottomnavIcon = ({ name, color, focused }) => {
     <MaskedView
       maskElement={
         <View style={{ justifyContent: "center", alignItems: "center" }}>
+
           <Ionicons 
             name={name}
             size={size}
@@ -33,11 +34,16 @@ const BottomnavIcon = ({ name, color, focused }) => {
 
         </View>
       }
-    
     >
+      <LinearGradient
+        colors={['#33A5F6', '#4CAF50']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={{ width: size, height: size }}
+       />
 
     </MaskedView>
-  )
-}
+  );
+};
 
-export default BottomnavIcon
+export default BottomnavIcon;
