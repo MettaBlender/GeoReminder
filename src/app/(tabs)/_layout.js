@@ -31,8 +31,11 @@ export default function Layout() {
       <Text className="mt-6">Header</Text>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: '#ff0000',
-          tabBarInactiveTintColor: '#faa'
+          tabBarActiveTintColor: '#ffffff',
+          tabBarInactiveTintColor: '#ffffff',
+          tabBarStyle: {
+            backgroundColor: '#000000', 
+          },
         }}
       >
         {tabs?.map(({name, title, icon, iconFocused}) => {
