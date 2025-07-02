@@ -1,7 +1,7 @@
 import ReminderListItem from "@/components/ReminderListItem";
 import { useRouter } from "expo-router";
 import React from "react";
-import { Text, View, FlatList } from "react-native";
+import { Text, View, FlatList, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const reminderData = [
@@ -24,6 +24,7 @@ export default function Page() {
   const insets = useSafeAreaInsets();
   return (
     <View className="flex-1 w-full bg-black" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+      <StatusBar barStyle="light-content"/>
       <Text className="text-center text-lg">Hello Expo</Text>
       <FlatList
         data={reminderData}
@@ -34,4 +35,3 @@ export default function Page() {
     </View>
   );
 }
-

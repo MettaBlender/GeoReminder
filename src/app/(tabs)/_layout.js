@@ -28,13 +28,12 @@ export default function Layout() {
 
   return (
     <>
-      <Text className="mt-6">Header</Text>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: '#ffffff',
+          tabBarActiveTintColor: '#000000',
           tabBarInactiveTintColor: '#ffffff',
           tabBarStyle: {
-            backgroundColor: '#000000', 
+            backgroundColor: '#000000',
           },
         }}
       >
@@ -48,8 +47,8 @@ export default function Layout() {
               }}
             />
           )
-        })}              
+        })}
       </Tabs>
     </>
-  )  
+  )
 }
