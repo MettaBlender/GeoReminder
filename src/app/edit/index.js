@@ -10,7 +10,7 @@ import CoordinateInput from '@/components/CoordinateInput';
 import SubmitButton from '@/components/SubmitButton';
 import LoadingView from '@/components/LoadingView';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const EditReminder = () => {
   const router = useRouter();
@@ -155,14 +155,57 @@ const EditReminder = () => {
         const reminders = value ? JSON.parse(value) : [];
         reminders[id] = data;
         setItem(JSON.stringify(reminders));
-        Alert.alert('Erfolg', 'Änderungen gespeichert ✓', [
-          { text: 'OK', onPress: () => router.back() }
+        Alert.alert('Erfolg', 'Änderungen gespeichert', [
+          {
+
+            text: 'OK',
+            onPress: () => router.back(),
+          },
         ]);
       })
       .catch((error) => {
         console.error('Error saving reminder:', error);
         Alert.alert('Fehler', 'Fehler beim Speichern der Erinnerung.');
       });
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Erinnerung löschen',
+      `Möchtest du die Erinnerung "${data.title}" wirklich löschen? Gelöschte Erinnerungen können nicht wiederhergestellt werden.`,
+      [
+        {
+          text: 'Abbrechen',
+          style: 'cancel',
+        },
+        {
+          text: 'Löschen',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const reminders = await getItem();
+              const reminderList = reminders ? JSON.parse(reminders) : [];
+              if (!reminderList[id]) {
+                Alert.alert('Fehler', 'Erinnerung nicht gefunden.');
+                router.back();
+                return;
+              }
+              reminderList.splice(id, 1); // Remove the reminder at index id
+              await setItem(JSON.stringify(reminderList));
+              Alert.alert('Erfolg', 'Erinnerung gelöscht', [
+                {
+                  text: 'OK',
+                  onPress: () => router.back(),
+                },
+              ]);
+            } catch (error) {
+              console.error('Error deleting reminder:', error);
+              Alert.alert('Fehler', 'Fehler beim Löschen der Erinnerung. Bitte versuche es erneut.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const dismissKeyboard = () => {
@@ -292,14 +335,26 @@ const EditReminder = () => {
                 onChangeText={(text) => setData((prev) => ({ ...prev, content: text }))}
                 multiline={true}
                 numberOfLines={6}
-                isRequired={data.content.length === 0}
+                isRequired={data.title.length === 0}
               />
-              <SubmitButton
-                onPress={handleSubmit}
-                disabled={!areAllFieldsValid()}
-              >
-                {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Speichern'}
-              </SubmitButton>
+              <View style={styles.buttonContainer}>
+                <SubmitButton
+                  onPress={handleSubmit}
+                  disabled={!areAllFieldsValid()}
+                >
+                  {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Speichern'}
+                </SubmitButton>
+                <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+                  <View className="w-16 h-16 rounded-lg bg-red-500 justify-center items-center">
+                    <MaterialIcons
+                      size={40}
+                      style={{ marginBottom: -3 }}
+                      name="delete"
+                      color="black"
+                    />
+                  </View>
+                </TouchableOpacity>
+              </View>
             </>
           ) : (
             <LoadingView message="Standort wird geladen..." />
@@ -324,6 +379,15 @@ const styles = StyleSheet.create({
   cancelText: {
     color: 'red',
     fontSize: 16,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  deleteButton: {
+    marginLeft: 10,
   },
 });
 
