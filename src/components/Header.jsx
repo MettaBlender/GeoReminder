@@ -36,7 +36,7 @@ const Header = ({ title, subtitle }) => {
         <LinearGradient
           colors={['#33A5F6', '#4CAF50']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1.5 }}
+          end={{ x: 0, y: 1.3 }}
           style={{ flex: 1 }}
         />
       </MaskedView>
