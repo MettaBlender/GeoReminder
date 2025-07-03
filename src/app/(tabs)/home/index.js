@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Text, View, FlatList, StatusBar, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 export default function Page() {
   const router = useRouter(); // Moved to top level
@@ -34,9 +36,18 @@ export default function Page() {
       });
   };
 
+  // Bestehende useEffect für initiale Ladung
   useEffect(() => {
     getData();
   }, []);
+
+  // Neue useFocusEffect für Aktualisierung beim Tab-Wechsel
+  useFocusEffect(
+    useCallback(() => {
+      getData();
+      return () => {}; // Cleanup-Funktion
+    }, [])
+  );
 
   const onPress = (index) => {
     console.log('Navigating to edit with id:', index); // For debugging
@@ -50,8 +61,8 @@ export default function Page() {
       <FlatList
         data={reminderData}
         renderItem={({ item, index }) => (
-          <ReminderListItem 
-            item={item} 
+          <ReminderListItem
+            item={item}
             onPress={() => onPress(index)} // Pass a function that calls onPress with index
           />
         )}

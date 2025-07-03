@@ -11,8 +11,8 @@ const ReminderListItem = ({ item, onPress }) => {
           <Logo width={28} height={28} />
         </View>
         <View className="flex-1">
-            <Text className="text-white text-lg font-bold">{item.title}</Text>
-            <Text className="text-white text-base">{item.content}</Text>
+            <Text className="text-white text-lg font-bold" numberOfLines={1} ellipsizeMode='true'>{item.title}</Text>
+            <Text className="text-white text-base" numberOfLines={1} ellipsizeMode='true'>{item.content}</Text>
         </View>
         <TouchableOpacity onPress={onPress}>
             <MaterialIcons size={28} style={{ margin: -3 }} name="edit" color="white"/>
