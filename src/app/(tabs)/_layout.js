@@ -31,6 +31,14 @@ export default function Layout() {
        icon: "map-outline",
     iconFocused: "map"
     },
+    {
+      name: "login/index",
+      title: "Profil",
+      titleTop: "Profil",
+      subtitle: "Anmelden oder registrieren",
+      icon: "person-outline",
+      iconFocused: "person"
+    },
   ]
 
   return (

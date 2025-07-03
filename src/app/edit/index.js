@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -18,6 +18,7 @@ const EditReminder = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { getItem, setItem } = useAsyncStorage('reminder');
+  const { getItem: getCurrentUser } = useAsyncStorage('currentUser');
 
   const [location, setLocation] = useState(null);
   const [isMapLoading, setIsMapLoading] = useState(true);
@@ -38,9 +39,27 @@ const EditReminder = () => {
   useEffect(() => {
     const loadReminder = async () => {
       try {
+        // Aktuellen Benutzer laden
+        const user = await getCurrentUser();
+        let userId = 'unsigned'; // Standard für nicht angemeldete Benutzer
+
+        if (user) {
+          const userData = JSON.parse(user);
+          userId = userData.id || userData.username;
+        }
+
+        // Benutzerspezifische oder unsignierte Reminder laden
         const reminders = await getItem();
-        const reminderList = reminders ? JSON.parse(reminders) : [];
-        const reminder = reminderList[id];
+        const allReminders = reminders ? JSON.parse(reminders) : {};
+        let userReminders = allReminders[userId];
+
+        // Sicherstellen, dass userReminders ein Array ist
+        if (!Array.isArray(userReminders)) {
+          userReminders = [];
+        }
+
+        const reminder = userReminders[id];
+
         if (reminder) {
           setData(reminder);
         } else {
@@ -139,7 +158,7 @@ const EditReminder = () => {
     setSearchResults([]);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!data.title.trim() || !data.content.trim() || !data.radius.trim() || !data.latitude || !data.longitude) {
       Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
       return;
@@ -152,19 +171,36 @@ const EditReminder = () => {
       Alert.alert('Fehler', 'Bitte setze einen Pin auf der Karte oder gib gültige Koordinaten ein.');
       return;
     }
-    getItem()
-      .then((value) => {
-        const reminders = value ? JSON.parse(value) : [];
-        reminders[id] = data;
-        setItem(JSON.stringify(reminders));
-        Alert.alert('Erfolg', 'Änderungen gespeichert ✓', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
-      })
-      .catch((error) => {
-        console.error('Error saving reminder:', error);
-        Alert.alert('Fehler', 'Fehler beim Speichern der Erinnerung.');
-      });
+
+    try {
+      // Aktuellen Benutzer laden
+      const user = await getCurrentUser();
+      let userId = 'unsigned'; // Standard für nicht angemeldete Benutzer
+
+      if (user) {
+        const userData = JSON.parse(user);
+        userId = userData.id || userData.username;
+      }
+
+      // Benutzerspezifische oder unsignierte Reminder laden und aktualisieren
+      const value = await getItem();
+      const allReminders = value ? JSON.parse(value) : {};
+      let userReminders = allReminders[userId];
+
+      // Sicherstellen, dass userReminders ein Array ist
+      if (!Array.isArray(userReminders)) {
+        userReminders = [];
+      }
+
+      userReminders[id] = data;
+      allReminders[userId] = userReminders;
+
+      await setItem(JSON.stringify(allReminders));
+      router.push('/home');
+    } catch (error) {
+      console.error('Error saving reminder:', error);
+      Alert.alert('Fehler', 'Fehler beim Speichern der Erinnerung.');
+    }
   };
 
   const handleDelete = () => {
@@ -178,18 +214,36 @@ const EditReminder = () => {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Aktuellen Benutzer laden
+              const user = await getCurrentUser();
+              let userId = 'unsigned'; // Standard für nicht angemeldete Benutzer
+
+              if (user) {
+                const userData = JSON.parse(user);
+                userId = userData.id || userData.username;
+              }
+
+              // Benutzerspezifische oder unsignierte Reminder laden und löschen
               const reminders = await getItem();
-              const reminderList = reminders ? JSON.parse(reminders) : [];
-              if (!reminderList[id]) {
+              const allReminders = reminders ? JSON.parse(reminders) : {};
+              let userReminders = allReminders[userId];
+
+              // Sicherstellen, dass userReminders ein Array ist
+              if (!Array.isArray(userReminders)) {
+                userReminders = [];
+              }
+
+              if (!userReminders[id]) {
                 Alert.alert('Fehler', 'Erinnerung nicht gefunden.');
-                router.back();
+                router.push('/home');
                 return;
               }
-              reminderList.splice(id, 1);
-              await setItem(JSON.stringify(reminderList));
-              Alert.alert('Erfolg', 'Erinnerung gelöscht ✓', [
-                { text: 'OK', onPress: () => router.back() },
-              ]);
+
+              userReminders.splice(id, 1);
+              allReminders[userId] = userReminders;
+
+              await setItem(JSON.stringify(allReminders));
+              router.push('/home');
             } catch (error) {
               console.error('Error deleting reminder:', error);
               Alert.alert('Fehler', 'Fehler beim Löschen der Erinnerung. Bitte versuche es erneut.');
@@ -204,6 +258,33 @@ const EditReminder = () => {
     Keyboard.dismiss();
     setSearchResults([]);
   };
+
+  // Load location and permission
+  useEffect(() => {
+    (async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('Standortzugriff verweigert.');
+          Alert.alert('Berechtigung verweigert', 'Bitte erlaube den Zugriff auf den Standort.');
+          setIsMapLoading(false);
+          return;
+        }
+        let currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Platform.OS === 'ios' ? Location.Accuracy.Highest : Location.Accuracy.Balanced,
+        });
+        setLocation({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        });
+        setIsMapLoading(false);
+      } catch (error) {
+        console.error('Fehler beim Abrufen des Standorts:', error);
+        setErrorMsg('Fehler beim Laden des Standorts.');
+        setIsMapLoading(false);
+      }
+    })();
+  }, []);
 
   const isPositiveNumber = (value) => {
     const numericRegex = /^[0-9]+(\.[0-9]+)?$/;
@@ -244,13 +325,18 @@ const EditReminder = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={dismissKeyboard}>
-      <View className="flex-1 bg-black">
-        <ScrollView className="flex-1 p-4">
-          {isDataLoading ? (
-            <LoadingView message="Daten werden geladen..." />
-          ) : errorMsg ? (
-            <Text className="text-red-400 text-base text-center mt-5">{errorMsg}</Text>
+    <KeyboardAvoidingView
+      className="flex-1 bg-black"
+      behavior='padding'
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 150 : 100}
+    >
+      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        <View className="flex-1 bg-black">
+          <ScrollView className="flex-1 p-4" keyboardShouldPersistTaps="handled">
+            {isDataLoading ? (
+              <LoadingView message="Daten werden geladen..." />
+            ) : errorMsg ? (
+              <Text className="text-red-400 text-base text-center mt-5">{errorMsg}</Text>
           ) : (
             <>
               <SearchBar
@@ -339,6 +425,7 @@ const EditReminder = () => {
         </ScrollView>
       </View>
     </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 

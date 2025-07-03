@@ -27,6 +27,7 @@ const Index = () => {
   const [isSearching, setIsSearching] = useState(false);
   const { title, content, radius, latitude, longitude } = data;
   const { getItem, setItem } = useAsyncStorage('reminder');
+  const { getItem: getCurrentUser } = useAsyncStorage('currentUser');
 
   const searchCache = {};
 
@@ -105,7 +106,7 @@ const Index = () => {
     setSearchResults([]);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !content.trim() || !radius.trim() || !latitude || !longitude) {
       Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
       return;
@@ -119,26 +120,44 @@ const Index = () => {
     if (latitude === '0.0' || longitude === '0.0') {
       Alert.alert('Fehler', 'Bitte setze einen Pin auf der Karte oder gib gültige Koordinaten ein.');
       return;
-    }
+    }    try {
+      // Aktuellen Benutzer laden
+      const user = await getCurrentUser();
+      let userId = 'unsigned'; // Standard für nicht angemeldete Benutzer
 
-    getItem()
-      .then((value) => {
-        const newReminder = value ? [...JSON.parse(value), data] : [data];
-        setItem(JSON.stringify(newReminder));
-        setData({
-          title: '',
-          content: '',
-          radius: '',
-          latitude: '0.0',
-          longitude: '0.0',
-        });
-        setSearchQuery('');
-        router.push('/home');
-      })
-      .catch((error) => {
-        console.error('Error saving reminder:', error);
-        Alert.alert('Fehler', 'Fehler beim Speichern der Erinnerung.');
+      if (user) {
+        const userData = JSON.parse(user);
+        userId = userData.id || userData.username;
+      }
+
+      // Benutzerspezifische oder unsignierte Reminder laden und hinzufügen
+      const value = await getItem();
+      const allReminders = value ? JSON.parse(value) : {};
+      let userReminders = allReminders[userId];
+
+      // Sicherstellen, dass userReminders ein Array ist
+      if (!Array.isArray(userReminders)) {
+        userReminders = [];
+      }
+
+      userReminders.push(data);
+      allReminders[userId] = userReminders;
+
+      await setItem(JSON.stringify(allReminders));
+
+      setData({
+        title: '',
+        content: '',
+        radius: '',
+        latitude: '0.0',
+        longitude: '0.0',
       });
+      setSearchQuery('');
+      router.push('/home');
+    } catch (error) {
+      console.error('Error saving reminder:', error);
+      Alert.alert('Fehler', 'Fehler beim Speichern der Erinnerung.');
+    }
   };
 
   const dismissKeyboard = () => {

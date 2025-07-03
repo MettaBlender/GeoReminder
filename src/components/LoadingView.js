@@ -3,7 +3,7 @@ import React from 'react';
 
 const LoadingView = ({ message = "Wird geladen..." }) => {
   return (
-    <View className="flex-1 justify-center items-center">
+    <View className="flex-1 justify-center items-center w-full h-full bg-black">
       <ActivityIndicator size="large" color="#ffffff" />
       <Text className="text-white text-base text-center">{message}</Text>
     </View>
