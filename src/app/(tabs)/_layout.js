@@ -1,6 +1,6 @@
 import "@/global.css";
 import { Slot, Tabs } from "expo-router";
-import { Text } from "react-native";
+import { Text, Platform } from "react-native";
 import BottomnavIcon from "@/components/BottomnavIcon";
 import Header from "@/components/Header";
 
