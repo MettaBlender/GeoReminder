@@ -48,7 +48,10 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Erlaube $(PRODUCT_NAME), deinen Standort zu verwenden, um deine Position auf der Karte anzuzeigen.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Erlaube $(PRODUCT_NAME), deinen Standort im Vorder- und Hintergrund zu verwenden, um standortbasierte Benachrichtigungen zu senden.",
-        "UIBackgroundModes": ["location", "fetch"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -57,14 +60,17 @@
         "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.ACCESS_COARSE_LOCATION"
       ],
       "package": "com.aaronbyjapps.GeoReminder"
+    },
+    "extra": {
+      "router": {
+        "origin": "https://n"
+      },
+      "eas": {
+        "projectId": "5f8b03ae-0f75-41a8-9b59-f9634e1d7dd8"
+      }
     }
   }
 }
