@@ -13,8 +13,8 @@ const ReminderListItem = ({item, onPresss}) => {
           <Logo width={28} height={28} />
         </View>
         <View className="flex-1">
-            <Text className="text-white text-lg font-bold">{item.titel}</Text>
-            <Text className="text-white text-base">{item.description}</Text>
+            <Text className="text-white text-lg font-bold">{item.title}</Text>
+            <Text className="text-white text-base">{item.content}</Text>
         </View>
         <Link href="/edit" asChild>
           <TouchableOpacity onPress={onPresss}>

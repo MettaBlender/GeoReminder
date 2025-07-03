@@ -16,12 +16,23 @@ const Index = () => {
     longitude: '0.0'
   });
   const { title, content, radius, latitude, longitude } = data
-  const {getItem, setItem} = useAsyncStorage('reminder');
+  const {getItem, setItem} = useAsyncStorage('reminder');  
 
 
   const handleSubmit = () => {
     console.log('data:', data );
-    setItem(JSON.stringify(data))
+    getItem().then((value) => {
+      if (value) {                
+        const newReminder = [...JSON.parse(value), data];
+        console.log('newReminder:', newReminder);
+        setItem(JSON.stringify(newReminder))
+      } else {
+        console.log('newData:', [data]);
+        setItem(JSON.stringify([data]))
+      }
+      }).catch(error => {
+        console.error("Error loading items:", error)
+    });
   };
 
     const dismissKeyboard = () => {
