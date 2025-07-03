@@ -43,10 +43,7 @@ export default function Layout() {
             backgroundColor: '#000000',
             backgroundColor: '#000000',
           },
-          headerStyle: { backgroundColor: '#000000' },
-          headerTintColor: '#ffffff',
-          headerTitleAlign: 'center',
-          headerStyle: { backgroundColor: '#000000' },
+          headerStyle: { backgroundColor: '#000000', height: 95 },
           headerTintColor: '#ffffff',
           headerTitleAlign: 'center',
         }}
