@@ -310,13 +310,14 @@ const Index = () => {
               numberOfLines={6}
               isRequired={content.length === 0}
             />
-
-            <SubmitButton
-              onPress={handleSubmit}
-              disabled={!areAllFieldsValid()}
-            >
-              {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
-            </SubmitButton>
+            <View style={{ marginBottom: 40 }}>
+              <SubmitButton
+                onPress={handleSubmit}
+                disabled={!areAllFieldsValid()}
+              >
+                {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
+              </SubmitButton>
+            </View>
           </ScrollView>
         </View>
       </TouchableWithoutFeedback>

@@ -11,6 +11,8 @@ import LoadingView from '@/components/LoadingView';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Trash from '@/components/Trash';
+import SubmitButton from '@/components/SubmitButton';
 
 const EditReminder = () => {
   const router = useRouter();
@@ -330,27 +332,15 @@ const EditReminder = () => {
                 isRequired={data.title.length === 0}
               />
               <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
-                  <LinearGradient
-                    colors={['#33A5F6', '#4CAF50']}
-                    start={{ x: 0, y: 0.5 }}
-                    end={{ x: 1, y: 0.5 }}
-                    style={styles.gradient}
-                  >
-                    <Text style={styles.saveButtonText}>
-                      {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Speichern'}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
+                <SubmitButton
+                  onPress={handleSubmit}
+                  disabled={!areAllFieldsValid()}
+                  width="80%"
+                >
+                  {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
+                </SubmitButton>
                 <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-                  <View className="w-16 h-16 rounded-lg bg-red-500 justify-center items-center">
-                    <MaterialIcons
-                      size={40}
-                      style={{ marginBottom: -3 }}
-                      name="delete"
-                      color="black"
-                    />
-                  </View>
+                  <Trash/>
                 </TouchableOpacity>
               </View>
             </>
@@ -388,6 +378,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
     marginHorizontal: 8,
+    marginBottom: 40,
   },
   saveButton: {
     flex: 1,
