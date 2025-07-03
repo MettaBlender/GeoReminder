@@ -1,11 +1,12 @@
 import { StyleSheet, View, Text, Alert, ActivityIndicator, Platform } from 'react-native';
 import React, { useState, useEffect, memo } from 'react';
-import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import MemoizedMapView from '@/components/MemoizedMapView';
+import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 
 // Task-Name für Geofencing
 const GEOFENCING_TASK = 'geofencing-task';
@@ -40,80 +41,40 @@ TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
   }
 });
 
-// Optimierte MapView-Komponente mit memo
-const MemoizedMapView = memo(({ location, style, showsUserLocation, markers }) => (
-  <MapView
-    style={style}
-    initialRegion={{
-      latitude: location.latitude,
-      longitude: location.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    }}
-    showsUserLocation={showsUserLocation}
-    showsTraffic={false}
-    showsBuildings={false}
-    loadingEnabled={true}
-  >
-    <Marker
-      coordinate={{
-        latitude: location.latitude,
-        longitude: location.longitude,
-      }}
-      title="Mein Standort"
-      description="Hier bin ich gerade"
-      pinColor="blue"
-    />
-    {markers.map((marker) => (
-      <Marker
-        key={marker.identifier}
-        coordinate={{
-          latitude: marker.latitude,
-          longitude: marker.longitude,
-        }}
-        title={marker.identifier}
-        description="Geofence-Region"
-        pinColor="red"
-      />
-    ))}
-  </MapView>
-));
-
-// Geofence-Regionen
-const geofenceRegions = [
-  {
-    identifier: 'Zielort 1',
-    latitude: 46.93995,
-    longitude: 7.39864,
-    radius: 100,
-    notifyOnEnter: true,
-    notifyOnExit: false,
-  },
-  {
-    identifier: 'Zielort 2',
-    latitude: 46.9405,
-    longitude: 7.3995,
-    radius: 100,
-    notifyOnEnter: true,
-    notifyOnExit: false,
-  },
-  {
-    identifier: 'Zielort 3',
-    latitude: 46.9385,
-    longitude: 7.3970,
-    radius: 100,
-    notifyOnEnter: true,
-    notifyOnExit: false,
-  },
-];
-
-const Index = () => {
+const Map = () => {
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const {getItem, setItem} = useAsyncStorage('reminder');  
+  
+  const [reminderData, setReminderData] = useState([])
+
   // Check if running in Expo Go on iOS
   const isExpoGoOnIOS = Platform.OS === 'ios'; //Constants.appOwnership === 'expo' &&
+
+  const getData = () => {
+    setIsLoading(true);
+    getItem()
+      .then((value) => {
+        if (value) {   
+          console.log('reminderData:', JSON.parse(value));             
+          setReminderData(JSON.parse(value))
+        }
+        else {
+          setReminderData([]);
+        }
+      })
+      .catch(error => {
+          console.error("Error loading items:", error)
+      }).finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    getData();
+  }, []);
 
   useEffect(() => {
     console.log('useEffect gestartet');
@@ -161,7 +122,7 @@ const Index = () => {
             setIsLoading(false);
             return;
           }
-          await Location.startGeofencingAsync(GEOFENCING_TASK, geofenceRegions);
+          await Location.startGeofencingAsync(GEOFENCING_TASK, reminderData);
         } else {
           console.log('Geofencing wird in Expo Go auf iOS übersprungen (nicht unterstützt).');
           Alert.alert(
@@ -202,7 +163,7 @@ const Index = () => {
           location={location}
           style={styles.map}
           showsUserLocation={true}
-          markers={geofenceRegions}
+          markers={reminderData}
         />
       ) : (
         <Text style={styles.loadingText}>Standort wird geladen...</Text>
@@ -242,4 +203,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Index;
+export default Map;
