@@ -155,7 +155,7 @@ const EditReminder = () => {
         const reminders = value ? JSON.parse(value) : [];
         reminders[id] = data;
         setItem(JSON.stringify(reminders));
-        Alert.alert('Erfolg', 'Änderungen gespeichert ✓', [
+        Alert.alert('Erfolg', 'Änderungen gespeichert', [
           {
 
             text: 'OK',
@@ -192,7 +192,7 @@ const EditReminder = () => {
               }
               reminderList.splice(id, 1); // Remove the reminder at index id
               await setItem(JSON.stringify(reminderList));
-              Alert.alert('Erfolg', 'Erinnerung gelöscht ✓', [
+              Alert.alert('Erfolg', 'Erinnerung gelöscht', [
                 {
                   text: 'OK',
                   onPress: () => router.back(),

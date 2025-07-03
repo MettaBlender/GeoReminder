@@ -15,7 +15,7 @@ export default function Layout() {
       <Stack.Screen
         name="edit/index"
         options={{ presentation: "modal", title: "Modal",
-          headerTitle: () => (<Header title="Erinnerung bearbeiten" subtitle="Bearbeite deine Erinnerung"/>)
+          headerTitle: () => (<Header title="Bearbeiten" subtitle="Bearbeite deine Erinnerung"/>)
          }}
       />
     </Stack>
