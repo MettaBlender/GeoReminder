@@ -39,7 +39,7 @@ const Index = () => {
 
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard} >
-    <ScrollView className="flex-1 px-4 bg-red-500" style={{height: '80%'}}>
+    <ScrollView className="flex-1 px-4 bg-black" style={{height: '80%'}}>
       
         {location && (
           <MapView
@@ -81,6 +81,22 @@ const Index = () => {
             multiline={true}
             numberOfLines={6}
           />
+          <TextInput
+            className="border text-black bg-white border-gray-300 rounded-lg p-3 h-40 text-top mb-4"
+            placeholder="Inhalt eingeben"
+            value={content}
+            onChangeText={setContent}
+            multiline={true}
+            numberOfLines={6}
+          />
+          <TextInput
+            className="border text-black bg-white border-gray-300 rounded-lg p-3 h-40 text-top mb-4"
+            placeholder="Inhalt eingeben"
+            value={content}
+            onChangeText={setContent}
+            multiline={true}
+            numberOfLines={6}
+          />
           <Text className="text-lg text-white  font-bold mb-2 mt-0">Radius</Text> 
           <TextInput
             className="border text-black bg-white border-gray-300 rounded-lg p-3 mb-4"
@@ -110,7 +126,7 @@ const styles = StyleSheet.create({
   },
   map: {
     width: '100%',
-    height: '70%',
+    height: 300,
     marginTop: 15,
     marginBottom: 5,
     cornerRadius: 10 ,
