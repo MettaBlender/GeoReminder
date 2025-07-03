@@ -11,6 +11,7 @@ const Index = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [radius, setRadius] = useState('');
+  const [coordinates, setCoordinates] = useState({ latitude: '0.0', longitude: '0.0'})
 
   const handleSubmit = () => {
     console.log('Titel:', title);
@@ -63,6 +64,23 @@ const Index = () => {
             />
           </MapView>
         )}
+        <Text className="text-lg text-white  font-bold mb-2 mt-0">Koordinaten</Text> 
+          <TextInput
+            className="border text-black bg-white border-gray-300 rounded-lg p-3 mb-4"
+            placeholder="Radius eingeben"
+            value={coordinates}
+            onChangeText={setCoordinates}
+          />
+
+        <Text className="text-lg text-white  font-bold mb-2 mt-0">Radius</Text> 
+          <TextInput
+            className="border text-black bg-white border-gray-300 rounded-lg p-3 mb-4"
+            placeholder="Radius eingeben"
+            value={radius}
+            onChangeText={setRadius}
+          />
+
+          
         
           <Text className="text-lg text-white  font-bold mb-2 mt-0">Titel</Text> 
           <TextInput
@@ -81,33 +99,11 @@ const Index = () => {
             multiline={true}
             numberOfLines={6}
           />
-          <TextInput
-            className="border text-black bg-white border-gray-300 rounded-lg p-3 h-40 text-top mb-4"
-            placeholder="Inhalt eingeben"
-            value={content}
-            onChangeText={setContent}
-            multiline={true}
-            numberOfLines={6}
-          />
-          <TextInput
-            className="border text-black bg-white border-gray-300 rounded-lg p-3 h-40 text-top mb-4"
-            placeholder="Inhalt eingeben"
-            value={content}
-            onChangeText={setContent}
-            multiline={true}
-            numberOfLines={6}
-          />
-          <Text className="text-lg text-white  font-bold mb-2 mt-0">Radius</Text> 
-          <TextInput
-            className="border text-black bg-white border-gray-300 rounded-lg p-3 mb-4"
-            placeholder="Radius eingeben"
-            value={radius}
-            onChangeText={setRadius}
-          />
+          
 
           <TouchableOpacity
             onPress={handleSubmit}
-            className="bg-green-500 rounded-lg p-4"
+            className="bg-green-500 rounded-lg p-4 my-4"
           >
           <Text className="text-white text-center font-bold">Absenden</Text>
         </TouchableOpacity>
@@ -128,7 +124,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 300,
     marginTop: 15,
-    marginBottom: 5,
+    marginBottom: 10,
     cornerRadius: 10 ,
   },
 });
