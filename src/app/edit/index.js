@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -7,10 +7,10 @@ import SearchBar from '@/components/SearchBar';
 import SearchResults from '@/components/SearchResults';
 import FormField from '@/components/FormField';
 import CoordinateInput from '@/components/CoordinateInput';
-import SubmitButton from '@/components/SubmitButton';
 import LoadingView from '@/components/LoadingView';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const EditReminder = () => {
   const router = useRouter();
@@ -18,7 +18,8 @@ const EditReminder = () => {
   const { getItem, setItem } = useAsyncStorage('reminder');
 
   const [location, setLocation] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isMapLoading, setIsMapLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
   const [data, setData] = useState({
     title: '',
@@ -40,7 +41,6 @@ const EditReminder = () => {
         const reminder = reminderList[id];
         if (reminder) {
           setData(reminder);
-          setSearchQuery(reminder.title);
         } else {
           Alert.alert('Fehler', 'Erinnerung nicht gefunden.');
           router.back();
@@ -50,7 +50,7 @@ const EditReminder = () => {
         Alert.alert('Fehler', 'Fehler beim Laden der Erinnerung.');
         router.back();
       } finally {
-        setIsLoading(false);
+        setIsDataLoading(false);
       }
     };
     loadReminder();
@@ -64,7 +64,7 @@ const EditReminder = () => {
         if (status !== 'granted') {
           setErrorMsg('Standortzugriff verweigert.');
           Alert.alert('Berechtigung verweigert', 'Bitte erlaube den Zugriff auf den Standort.');
-          setIsLoading(false);
+          setIsMapLoading(false);
           return;
         }
         let currentLocation = await Location.getCurrentPositionAsync({
@@ -74,11 +74,11 @@ const EditReminder = () => {
           latitude: currentLocation.coords.latitude,
           longitude: currentLocation.coords.longitude,
         });
-        setIsLoading(false);
+        setIsMapLoading(false);
       } catch (error) {
         console.error('Fehler beim Abrufen des Standorts:', error);
         setErrorMsg('Fehler beim Laden des Standorts.');
-        setIsLoading(false);
+        setIsMapLoading(false);
       }
     })();
   }, []);
@@ -155,12 +155,8 @@ const EditReminder = () => {
         const reminders = value ? JSON.parse(value) : [];
         reminders[id] = data;
         setItem(JSON.stringify(reminders));
-        Alert.alert('Erfolg', 'Änderungen gespeichert', [
-          {
-
-            text: 'OK',
-            onPress: () => router.back(),
-          },
+        Alert.alert('Erfolg', 'Änderungen gespeichert ✓', [
+          { text: 'OK', onPress: () => router.back() },
         ]);
       })
       .catch((error) => {
@@ -174,10 +170,7 @@ const EditReminder = () => {
       'Erinnerung löschen',
       `Möchtest du die Erinnerung "${data.title}" wirklich löschen? Gelöschte Erinnerungen können nicht wiederhergestellt werden.`,
       [
-        {
-          text: 'Abbrechen',
-          style: 'cancel',
-        },
+        { text: 'Abbrechen', style: 'cancel' },
         {
           text: 'Löschen',
           style: 'destructive',
@@ -190,13 +183,10 @@ const EditReminder = () => {
                 router.back();
                 return;
               }
-              reminderList.splice(id, 1); // Remove the reminder at index id
+              reminderList.splice(id, 1);
               await setItem(JSON.stringify(reminderList));
-              Alert.alert('Erfolg', 'Erinnerung gelöscht', [
-                {
-                  text: 'OK',
-                  onPress: () => router.back(),
-                },
+              Alert.alert('Erfolg', 'Erinnerung gelöscht ✓', [
+                { text: 'OK', onPress: () => router.back() },
               ]);
             } catch (error) {
               console.error('Error deleting reminder:', error);
@@ -255,17 +245,12 @@ const EditReminder = () => {
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <View className="flex-1 bg-black">
         <ScrollView className="flex-1 p-4">
-          {isLoading ? (
-            <LoadingView message="Karte wird geladen..." />
+          {isDataLoading ? (
+            <LoadingView message="Daten werden geladen..." />
           ) : errorMsg ? (
             <Text className="text-red-400 text-base text-center mt-5">{errorMsg}</Text>
-          ) : location ? (
+          ) : (
             <>
-              {Platform.OS === 'ios' && (
-                <TouchableOpacity onPress={() => router.back()} style={styles.cancelButton}>
-                  <Text style={styles.cancelText}>Abbrechen</Text>
-                </TouchableOpacity>
-              )}
               <SearchBar
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -275,38 +260,45 @@ const EditReminder = () => {
                 searchResults={searchResults}
                 handleSelectPlace={handleSelectPlace}
               />
-              <MapView
-                style={styles.map}
-                initialRegion={{
-                  latitude: parseFloat(data.latitude) || location.latitude,
-                  longitude: parseFloat(data.longitude) || location.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-                showsUserLocation={true}
-                onPress={handleMapPress}
-              >
-                {parseFloat(data.latitude) !== 0.0 && parseFloat(data.longitude) !== 0.0 && (
+              {isMapLoading || !location ? (
+                <View style={styles.mapPlaceholder}>
+                  <ActivityIndicator size="large" color="#33a5f6" />
+                  <Text style={styles.mapLoadingText}>Karte wird geladen...</Text>
+                </View>
+              ) : (
+                <MapView
+                  style={styles.map}
+                  initialRegion={{
+                    latitude: parseFloat(data.latitude) || location.latitude,
+                    longitude: parseFloat(data.longitude) || location.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                  showsUserLocation={true}
+                  onPress={handleMapPress}
+                >
+                  {parseFloat(data.latitude) !== 0.0 && parseFloat(data.longitude) !== 0.0 && (
+                    <Marker
+                      coordinate={{
+                        latitude: parseFloat(data.latitude),
+                        longitude: parseFloat(data.longitude),
+                      }}
+                      title={data.title || 'Neuer Pin'}
+                      description={data.content || 'Von Nutzer gesetzt'}
+                      pinColor="green"
+                    />
+                  )}
                   <Marker
                     coordinate={{
-                      latitude: parseFloat(data.latitude),
-                      longitude: parseFloat(data.longitude),
+                      latitude: location.latitude,
+                      longitude: location.longitude,
                     }}
-                    title={data.title || 'Neuer Pin'}
-                    description={data.content || 'Von Nutzer gesetzt'}
-                    pinColor="green"
+                    title="Mein Standort"
+                    description="Hier bin ich gerade"
+                    pinColor="blue"
                   />
-                )}
-                <Marker
-                  coordinate={{
-                    latitude: location.latitude,
-                    longitude: location.longitude,
-                  }}
-                  title="Mein Standort"
-                  description="Hier bin ich gerade"
-                  pinColor="blue"
-                />
-              </MapView>
+                </MapView>
+              )}
               <CoordinateInput
                 latitude={data.latitude}
                 longitude={data.longitude}
@@ -338,12 +330,18 @@ const EditReminder = () => {
                 isRequired={data.title.length === 0}
               />
               <View style={styles.buttonContainer}>
-                <SubmitButton
-                  onPress={handleSubmit}
-                  disabled={!areAllFieldsValid()}
-                >
-                  {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Speichern'}
-                </SubmitButton>
+                <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
+                  <LinearGradient
+                    colors={['#33A5F6', '#4CAF50']}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={styles.gradient}
+                  >
+                    <Text style={styles.saveButtonText}>
+                      {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Speichern'}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
                   <View className="w-16 h-16 rounded-lg bg-red-500 justify-center items-center">
                     <MaterialIcons
@@ -356,8 +354,6 @@ const EditReminder = () => {
                 </TouchableOpacity>
               </View>
             </>
-          ) : (
-            <LoadingView message="Standort wird geladen..." />
           )}
         </ScrollView>
       </View>
@@ -372,12 +368,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 10,
   },
-  cancelButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 10,
+  mapPlaceholder: {
+    width: '100%',
+    height: 300,
+    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 10,
   },
-  cancelText: {
-    color: 'red',
+  mapLoadingText: {
+    color: '#ffffff',
+    marginTop: 10,
     fontSize: 16,
   },
   buttonContainer: {
@@ -385,9 +387,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 16,
+    marginHorizontal: 8,
+  },
+  saveButton: {
+    flex: 1,
+    height: 64,
+    marginRight: 8,
+  },
+  gradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  saveButtonText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   deleteButton: {
-    marginLeft: 10,
+    width: 64,
   },
 });
 
