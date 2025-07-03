@@ -46,7 +46,7 @@ export default function Page() {
         refreshControl={<RefreshControl
           refreshing={isLoading}
           onRefresh={() => getData()}            
-          colors={["#fff"]}
+          colors={["#33a5f6"]}
           tintColor={"#fff"}
         />}
       />
