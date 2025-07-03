@@ -43,7 +43,7 @@ export default function Layout() {
             backgroundColor: '#000000',
             backgroundColor: '#000000',
           },
-          headerStyle: { backgroundColor: '#000000', height: 95 },
+          headerStyle: { backgroundColor: '#000000', height: Platform.OS === 'ios' ? 120 : 95 },
           headerTintColor: '#ffffff',
           headerTitleAlign: 'center',
         }}
