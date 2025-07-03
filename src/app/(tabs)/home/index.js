@@ -8,18 +8,21 @@ import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 export default function Page() {
   const router = useRouter(); // Moved to top level
 
-  const { getItem, setItem } = useAsyncStorage('reminder');  
-  const [reminderData, setReminderData] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const {getItem, setItem} = useAsyncStorage('reminder');
+
+  const [reminderData, setReminderData] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+
 
   const getData = () => {
     setIsLoading(true);
     getItem()
       .then((value) => {
-        if (value) {   
-          console.log('reminderData:', JSON.parse(value));             
-          setReminderData(JSON.parse(value));
-        } else {
+        if (value) {
+          console.log('reminderData:', JSON.parse(value));
+          setReminderData(JSON.parse(value))
+        }
+        else {
           setReminderData([]);
         }
       })
@@ -31,8 +34,8 @@ export default function Page() {
       });
   };
 
-  useEffect(() => {    
-    getData(); // Fixed to call the function
+  useEffect(() => {
+    getData();
   }, []);
 
   const onPress = (index) => {
@@ -53,22 +56,21 @@ export default function Page() {
           />
         )}
         keyExtractor={(_, index) => index.toString()}
-        contentContainerStyle={{ paddingHorizontal: 10 }} // Fixed from contentContainerClassName
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={() => getData()}            
-            colors={["#33a5f6"]}
-            tintColor={"#fff"}
-          />
-        }
-        ListEmptyComponent={() => (
-          !isLoading && (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 20 }}>
-              <Text style={{ color: "white" }}>Noch gibt es Keine Erinnerungen...</Text>
-            </View>
-          )
-        )}
+        contentContainerClassName="px-2.5"
+        refreshControl={<RefreshControl
+          refreshing={isLoading}
+          onRefresh={() => getData()}
+          colors={["#33a5f6"]}
+          tintColor={"#fff"}
+        />
+      }
+      ListEmptyComponent={() => (
+        !isLoading && (
+          <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 20 }}>
+            <Text style={{ color: "white" }}>Noch gibt es Keine Erinnerungen...</Text>
+          </View>
+        )
+      )}
       />
     </View>
   );
