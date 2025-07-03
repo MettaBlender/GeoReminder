@@ -10,6 +10,7 @@
     "deploy": "npx expo export -p web && npx eas-cli@latest deploy"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-masked-view/masked-view": "^0.3.2",
     "expo": "^53.0.4",
     "expo-background-fetch": "~13.1.6",
