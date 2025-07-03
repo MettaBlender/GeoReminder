@@ -290,15 +290,6 @@ const EditReminder = () => {
                       pinColor="green"
                     />
                   )}
-                  <Marker
-                    coordinate={{
-                      latitude: location.latitude,
-                      longitude: location.longitude,
-                    }}
-                    title="Mein Standort"
-                    description="Hier bin ich gerade"
-                    pinColor="blue"
-                  />
                 </MapView>
               )}
               <CoordinateInput
@@ -377,8 +368,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 16,
-    marginHorizontal: 8,
+    marginHorizontal: 0,
     marginBottom: 40,
+    width: '100%',
   },
   saveButton: {
     flex: 1,
