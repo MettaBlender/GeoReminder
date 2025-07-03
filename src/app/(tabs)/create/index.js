@@ -21,7 +21,7 @@ const Index = () => {
 
   const handleSubmit = () => {
     console.log('data:', data );
-    
+    setItem(JSON.stringify(data))
   };
 
     const dismissKeyboard = () => {
