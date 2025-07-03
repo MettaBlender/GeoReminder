@@ -16,11 +16,11 @@ const Header = ({ title, subtitle }) => {
   const {width} = useWindowDimensions();
 
   return (
-    <View className='bg-transparent h-full' style={{ justifyContent: 'center', alignItems: 'center' }}>
+    <View className='bg-transparent h-full' style={{ justifyContent: 'start', alignItems: 'center' }}>
       <MaskedView
         style={{ flexDirection: 'row', height: 40, width: width }}
         maskElement={
-          <View style={{ width: width, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: width, justifyContent: 'start', alignItems: 'center' }}>
             <Text style={{
               fontSize: 30,
               fontWeight: 'bold',
@@ -36,12 +36,12 @@ const Header = ({ title, subtitle }) => {
         <LinearGradient
           colors={['#33A5F6', '#4CAF50']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+          end={{ x: 0, y: 1.5 }}
           style={{ flex: 1 }}
         />
       </MaskedView>
-      <View className='h-[1px] w-full bg-white my-1' />
-      <Text className='text-white text-lg'>{subtitle}</Text>
+      <View className='h-[1px] w-full bg-white' style={{marginVertical: 1}} />
+      <Text style={{fontSize: 15, color: '#fff'}}>{subtitle}</Text>
     </View>
   );
 };
