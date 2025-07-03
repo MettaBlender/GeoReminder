@@ -4,6 +4,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const Header = ({ title, subtitle }) => {
+  // Überprüfe, ob title definiert ist
   if (!title) {
     return (
       <View>
@@ -12,14 +13,14 @@ const Header = ({ title, subtitle }) => {
     );
   }
 
-  const { width } = useWindowDimensions();
+  const {width} = useWindowDimensions();
 
   return (
-    <View className='bg-transparent' style={{ justifyContent: 'center', alignItems: 'center' }}>
+    <View className='bg-transparent h-full' style={{ justifyContent: 'start', alignItems: 'center' }}>
       <MaskedView
-        style={{ flexDirection: 'row', height: 40, width: width * 0.8 }}
+        style={{ flexDirection: 'row', height: 40, width: width }}
         maskElement={
-          <View style={{ width: width * 0.8, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: width, justifyContent: 'start', alignItems: 'center' }}>
             <Text style={{
               fontSize: 30,
               fontWeight: 'bold',
@@ -39,10 +40,8 @@ const Header = ({ title, subtitle }) => {
           style={{ flex: 1 }}
         />
       </MaskedView>
-      <Text style={{ fontSize: 15, color: '#fff', marginTop: 4, marginBottom: 6 }}>
-        {subtitle}
-      </Text>
-      <View style={{ height: 1, width: width * 0.8, backgroundColor: '#ffffff' }} />
+      <View className='h-[1px] w-full bg-white' style={{marginVertical: 1}} />
+      <Text style={{fontSize: 15, color: '#fff'}}>{subtitle}</Text>
     </View>
   );
 };
