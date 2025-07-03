@@ -50,9 +50,9 @@ const MemoizedMapView = memo(({ location, style, showsUserLocation, markers }) =
       longitudeDelta: 0.01,
     }}
     showsUserLocation={showsUserLocation}
-    showsTraffic={false} // Deaktiviert Verkehrsinfos für schnellere Ladezeit
-    showsBuildings={false} // Deaktiviert 3D-Gebäude
-    loadingEnabled={true} // Zeigt Lade-Indikator der Karte
+    showsTraffic={false}
+    showsBuildings={false}
+    loadingEnabled={true}
   >
     <Marker
       coordinate={{
@@ -78,67 +78,52 @@ const MemoizedMapView = memo(({ location, style, showsUserLocation, markers }) =
   </MapView>
 ));
 
+// Geofence-Regionen
+const geofenceRegions = [
+  {
+    identifier: 'Zielort 1',
+    latitude: 46.93995,
+    longitude: 7.39864,
+    radius: 100,
+    notifyOnEnter: true,
+    notifyOnExit: false,
+  },
+  {
+    identifier: 'Zielort 2',
+    latitude: 46.9405,
+    longitude: 7.3995,
+    radius: 100,
+    notifyOnEnter: true,
+    notifyOnExit: false,
+  },
+  {
+    identifier: 'Zielort 3',
+    latitude: 46.9385,
+    longitude: 7.3970,
+    radius: 100,
+    notifyOnEnter: true,
+    notifyOnExit: false,
+  },
+];
+
 const Index = () => {
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mehrere Geofence-Regionen
-  const geofenceRegions = [
-    {
-      identifier: 'Zielort 1',
-      latitude: 46.93995,
-      longitude: 7.39864,
-      radius: 100,
-      notifyOnEnter: true,
-      notifyOnExit: false,
-    },
-    {
-      identifier: 'Zielort 2',
-      latitude: 46.9405,
-      longitude: 7.3995,
-      radius: 100,
-      notifyOnEnter: true,
-      notifyOnExit: false,
-    },
-    {
-      identifier: 'Zielort 3',
-      latitude: 46.9385,
-      longitude: 7.3970,
-      radius: 100,
-      notifyOnEnter: true,
-      notifyOnExit: false,
-    },
-  ];
-
   useEffect(() => {
     console.log('useEffect gestartet');
     (async () => {
       try {
+        // Prüfen, ob es ein physisches Gerät ist
         if (!Device.isDevice) {
           setErrorMsg('Geofencing funktioniert nur auf physischen Geräten.');
           setIsLoading(false);
           return;
         }
 
-        // Berechtigungen anfragen
-        let { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
-        if (foregroundStatus !== 'granted') {
-          setErrorMsg('Standortzugriff im Vordergrund verweigert.');
-          Alert.alert('Berechtigung verweigert', 'Bitte erlaube den Zugriff auf den Standort.');
-          setIsLoading(false);
-          return;
-        }
-
-        let { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-        if (backgroundStatus !== 'granted') {
-          setErrorMsg('Standortzugriff im Hintergrund verweigert.');
-          Alert.alert('Berechtigung verweigert', 'Hintergrundstandort ist für Geofencing erforderlich.');
-          setIsLoading(false);
-          return;
-        }
-
-        let { status: notificationStatus } = await Notifications.requestPermissionsAsync();
+        // Berechtigungen für Benachrichtigungen anfragen
+        const { status: notificationStatus } = await Notifications.requestPermissionsAsync();
         if (notificationStatus !== 'granted') {
           setErrorMsg('Benachrichtigungsberechtigung verweigert.');
           Alert.alert('Berechtigung verweigert', 'Bitte erlaube Benachrichtigungen.');
@@ -146,10 +131,27 @@ const Index = () => {
           return;
         }
 
+        // Berechtigungen für Standort anfragen (zuerst WhenInUse, dann Always)
+        const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
+        if (foregroundStatus !== 'granted') {
+          setErrorMsg('Standortzugriff im Vordergrund verweigert.');
+          Alert.alert('Berechtigung verweigert', 'Bitte erlaube den Zugriff auf den Standort.');
+          setIsLoading(false);
+          return;
+        }
+
+        const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+        if (backgroundStatus !== 'granted') {
+          setErrorMsg('Standortzugriff im Hintergrund verweigert.');
+          Alert.alert('Berechtigung verweigert', 'Hintergrundstandort ist für Geofencing erforderlich.');
+          setIsLoading(false);
+          return;
+        }
+
         // Standort abrufen
         console.log('Standort wird abgerufen');
-        let currentLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced, // Weniger präzise für schnellere Abfrage
+        const currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
         });
         setLocation(currentLocation.coords);
 
@@ -160,14 +162,16 @@ const Index = () => {
         setIsLoading(false);
       } catch (error) {
         console.error('Fehler in useEffect:', error);
-        setErrorMsg('Fehler beim Laden des Standorts oder Geofencing.');
+        setErrorMsg(`Fehler: ${error.message}`);
         setIsLoading(false);
       }
     })();
 
     return () => {
       console.log('Geofencing wird gestoppt');
-      Location.stopGeofencingAsync(GEOFENCING_TASK);
+      Location.stopGeofencingAsync(GEOFENCING_TASK).catch((error) =>
+        console.error('Fehler beim Stoppen von Geofencing:', error)
+      );
     };
   }, []);
 

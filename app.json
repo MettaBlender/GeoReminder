@@ -6,6 +6,7 @@
     "web": {
       "output": "static"
     },
+    "icon": "./src/assets/logo.png",
     "plugins": [
       [
         "expo-router",
@@ -23,8 +24,20 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./src/assets/logo.png",
           "color": "#ffffff"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000",
+          "image": "./src/assets/logo.png",
+          "dark": {
+            "image": "./src/assets/logo.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
         }
       ]
     ],
