@@ -17,8 +17,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Erlaube $(PRODUCT_NAME), deinen Standort zu verwenden, um standortbasierte Benachrichtigungen zu senden.",
-          "locationBackgroundPermission": "Erlaube $(PRODUCT_NAME), deinen Standort im Hintergrund zu verwenden, um Benachrichtigungen zu senden."
+          "locationWhenInUsePermission": "Erlaube $(PRODUCT_NAME), deinen Standort zu verwenden, um deine Position auf der Karte anzuzeigen.",
+          "locationAlwaysAndWhenInUsePermission": "Erlaube $(PRODUCT_NAME), deinen Standort im Vorder- und Hintergrund zu verwenden, um standortbasierte Benachrichtigungen zu senden.",
+          "locationBackgroundPermission": "Erlaube $(PRODUCT_NAME), deinen Standort im Hintergrund zu verwenden, um Geofencing-Benachrichtigungen zu ermöglichen."
         }
       ],
       [
@@ -45,10 +46,9 @@
     "slug": "GeoReminder",
     "ios": {
       "infoPlist": {
-        "UIBackgroundModes": [
-          "location",
-          "fetch"
-        ]
+        "NSLocationWhenInUseUsageDescription": "Erlaube $(PRODUCT_NAME), deinen Standort zu verwenden, um deine Position auf der Karte anzuzeigen.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Erlaube $(PRODUCT_NAME), deinen Standort im Vorder- und Hintergrund zu verwenden, um standortbasierte Benachrichtigungen zu senden.",
+        "UIBackgroundModes": ["location", "fetch"]
       }
     },
     "android": {
