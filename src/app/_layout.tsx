@@ -6,15 +6,6 @@ export default function Layout() {
   return (
     <Stack
         screenOptions={{
-          tabBarActiveTintColor: '#ffffff',
-          tabBarInactiveTintColor: '#ffffff',
-          tabBarStyle: {
-            backgroundColor: '#000000',
-            backgroundColor: '#000000',
-          },
-          headerStyle: { backgroundColor: '#000000' },
-          headerTintColor: '#ffffff',
-          headerTitleAlign: 'center',
           headerStyle: { backgroundColor: '#000000' },
           headerTintColor: '#ffffff',
           headerTitleAlign: 'center',

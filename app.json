@@ -12,9 +12,36 @@
         {
           "origin": "https://n"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Erlaube $(PRODUCT_NAME), deinen Standort zu verwenden, um standortbasierte Benachrichtigungen zu senden.",
+          "locationBackgroundPermission": "Erlaube $(PRODUCT_NAME), deinen Standort im Hintergrund zu verwenden, um Benachrichtigungen zu senden."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff"
+        }
       ]
     ],
     "name": "GeoReminder",
-    "slug": "GeoReminder"
+    "slug": "GeoReminder",
+    "ios": {
+      "infoPlist": {
+        "UIBackgroundModes": ["location", "fetch"]
+      }
+    },
+    "android": {
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ]
+    }
   }
 }

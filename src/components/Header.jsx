@@ -16,7 +16,7 @@ const Header = ({ title, subtitle }) => {
   const {width} = useWindowDimensions();
 
   return (
-    <View className='bg-transparent h-full' style={{justifyContent: 'center', alignItems: 'center' }}>
+    <View className='bg-transparent h-full' style={{ justifyContent: 'center', alignItems: 'center' }}>
       <MaskedView
         style={{ flexDirection: 'row', height: 40, width: width }}
         maskElement={
@@ -40,7 +40,7 @@ const Header = ({ title, subtitle }) => {
           style={{ flex: 1 }}
         />
       </MaskedView>
-      <View className='h-[1px] w-full bg-white my-1'/>
+      <View className='h-[1px] w-full bg-white my-1' />
       <Text className='text-white text-lg'>{subtitle}</Text>
     </View>
   );
