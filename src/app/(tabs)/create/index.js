@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text } from 'react-native';
+import { View, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text, KeyboardAvoidingView, ScrollView } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -223,107 +223,113 @@ const Index = () => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={dismissKeyboard}>
-      <View className="flex-1 bg-black">        
-        <ScrollView className="flex-1 p-4">
-          {isLoading ? (
-            <LoadingView message="Karte wird geladen..." />
-          ) : errorMsg ? (
-            <Text className="text-red-400 text-base text-center mt-5">{errorMsg}</Text>
-          ) : location ? (
-            <>
-              <SearchBar 
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                isSearching={isSearching}
-              />
-              
-              <SearchResults 
-                searchResults={searchResults}
-                handleSelectPlace={handleSelectPlace}
-              />
-              
-              <MapView
-                style={styles.map}
-                initialRegion={{
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-                region={location.region}
-                showsUserLocation={true}
-                onPress={handleMapPress}
-              >
-                {parseFloat(latitude) !== 0.0 && parseFloat(longitude) !== 0.0 && (
-                  <Marker
-                    coordinate={{
-                      latitude: parseFloat(latitude),
-                      longitude: parseFloat(longitude),
-                    }}
-                    title={title || 'Neuer Pin'}
-                    description={content || 'Von Nutzer gesetzt'}
-                    pinColor="green"
-                  />
-                )}
-                <Marker
-                  coordinate={{
+    <KeyboardAvoidingView 
+      className="flex-1 bg-black"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
+    >
+      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+        <View className="flex-1 bg-black">        
+          <ScrollView className="flex-1 p-4" keyboardShouldPersistTaps="handled">
+            {isLoading ? (
+              <LoadingView message="Karte wird geladen..." />
+            ) : errorMsg ? (
+              <Text className="text-red-400 text-base text-center mt-5">{errorMsg}</Text>
+            ) : location ? (
+              <>
+                <SearchBar 
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  isSearching={isSearching}
+                />
+                
+                <SearchResults 
+                  searchResults={searchResults}
+                  handleSelectPlace={handleSelectPlace}
+                />
+                
+                <MapView
+                  style={styles.map}
+                  initialRegion={{
                     latitude: location.latitude,
                     longitude: location.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
                   }}
-                  title="Mein Standort"
-                  description="Hier bin ich gerade"
-                  pinColor="blue"
+                  region={location.region}
+                  showsUserLocation={true}
+                  onPress={handleMapPress}
+                >
+                  {parseFloat(latitude) !== 0.0 && parseFloat(longitude) !== 0.0 && (
+                    <Marker
+                      coordinate={{
+                        latitude: parseFloat(latitude),
+                        longitude: parseFloat(longitude),
+                      }}
+                      title={title || 'Neuer Pin'}
+                      description={content || 'Von Nutzer gesetzt'}
+                      pinColor="green"
+                    />
+                  )}
+                  <Marker
+                    coordinate={{
+                      latitude: location.latitude,
+                      longitude: location.longitude,
+                    }}
+                    title="Mein Standort"
+                    description="Hier bin ich gerade"
+                    pinColor="blue"
+                  />
+                </MapView>
+                
+                <CoordinateInput 
+                  latitude={latitude}
+                  longitude={longitude}
+                  setData={setData}
                 />
-              </MapView>
-              
-              <CoordinateInput 
-                latitude={latitude}
-                longitude={longitude}
-                setData={setData}
-              />
-              
-              <FormField
-                label="Radius (in Metern)"
-                placeholder="Radius eingeben (z.B. 100)"
-                value={radius}
-                onChangeText={handleRadiusChange}
-                keyboardType="numeric"
-                hasError={radius.length > 0 && !isPositiveNumber(radius)}
-                errorMessage={getRadiusError()}
-              />
-              
-              <FormField
-                label="Titel"
-                placeholder="Titel eingeben"
-                value={title}
-                onChangeText={(text) => setData((prev) => ({ ...prev, title: text }))}
-                isRequired={title.length === 0}
-              />
-              
-              <FormField
-                label="Inhalt"
-                placeholder="Inhalt eingeben"
-                value={content}
-                onChangeText={(text) => setData((prev) => ({ ...prev, content: text }))}
-                multiline={true}
-                numberOfLines={6}
-                isRequired={content.length === 0}
-              />
-              
-              <SubmitButton
-                onPress={handleSubmit}
-                disabled={!areAllFieldsValid()}
-              >
-                {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
-              </SubmitButton>
-            </>
-          ) : (
-            <LoadingView message="Standort wird geladen..." />
-          )}
-        </ScrollView>
-      </View>
-    </TouchableWithoutFeedback>
+                
+                <FormField
+                  label="Radius (in Metern)"
+                  placeholder="Radius eingeben (z.B. 100)"
+                  value={radius}
+                  onChangeText={handleRadiusChange}
+                  keyboardType="numeric"
+                  hasError={radius.length > 0 && !isPositiveNumber(radius)}
+                  errorMessage={getRadiusError()}
+                />
+                
+                <FormField
+                  label="Titel"
+                  placeholder="Titel eingeben"
+                  value={title}
+                  onChangeText={(text) => setData((prev) => ({ ...prev, title: text }))}
+                  isRequired={title.length === 0}
+                />
+                
+                <FormField
+                  label="Inhalt"
+                  placeholder="Inhalt eingeben"
+                  value={content}
+                  onChangeText={(text) => setData((prev) => ({ ...prev, content: text }))}
+                  multiline={true}
+                  numberOfLines={6}
+                  isRequired={content.length === 0}
+                />
+                
+                <SubmitButton
+                  onPress={handleSubmit}
+                  disabled={!areAllFieldsValid()}
+                >
+                  {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
+                </SubmitButton>
+              </>
+            ) : (
+              <LoadingView message="Standort wird geladen..." />
+            )}
+          </ScrollView>
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
