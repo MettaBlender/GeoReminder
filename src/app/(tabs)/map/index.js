@@ -1,10 +1,11 @@
-import { StyleSheet, View, Text, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, Alert, ActivityIndicator, Platform } from 'react-native';
 import React, { useState, useEffect, memo } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 
 // Task-Name für Geofencing
 const GEOFENCING_TASK = 'geofencing-task';
@@ -111,13 +112,16 @@ const Index = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check if running in Expo Go on iOS
+  const isExpoGoOnIOS = Constants.appOwnership === 'expo' && Platform.OS === 'ios';
+
   useEffect(() => {
     console.log('useEffect gestartet');
     (async () => {
       try {
         // Prüfen, ob es ein physisches Gerät ist
         if (!Device.isDevice) {
-          setErrorMsg('Geofencing funktioniert nur auf physischen Geräten.');
+          setErrorMsg('Standortzugriff funktioniert nur auf physischen Geräten.');
           setIsLoading(false);
           return;
         }
@@ -131,19 +135,11 @@ const Index = () => {
           return;
         }
 
-        // Berechtigungen für Standort anfragen (zuerst WhenInUse, dann Always)
+        // Berechtigungen für Standort anfragen
         const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
         if (foregroundStatus !== 'granted') {
           setErrorMsg('Standortzugriff im Vordergrund verweigert.');
           Alert.alert('Berechtigung verweigert', 'Bitte erlaube den Zugriff auf den Standort.');
-          setIsLoading(false);
-          return;
-        }
-
-        const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-        if (backgroundStatus !== 'granted') {
-          setErrorMsg('Standortzugriff im Hintergrund verweigert.');
-          Alert.alert('Berechtigung verweigert', 'Hintergrundstandort ist für Geofencing erforderlich.');
           setIsLoading(false);
           return;
         }
@@ -155,9 +151,24 @@ const Index = () => {
         });
         setLocation(currentLocation.coords);
 
-        // Geofencing starten
-        console.log('Geofencing wird gestartet');
-        await Location.startGeofencingAsync(GEOFENCING_TASK, geofenceRegions);
+        // Geofencing nur starten, wenn nicht in Expo Go auf iOS
+        if (!isExpoGoOnIOS) {
+          console.log('Geofencing wird gestartet');
+          const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+          if (backgroundStatus !== 'granted') {
+            setErrorMsg('Standortzugriff im Hintergrund verweigert.');
+            Alert.alert('Berechtigung verweigert', 'Hintergrundstandort ist für Geofencing erforderlich.');
+            setIsLoading(false);
+            return;
+          }
+          await Location.startGeofencingAsync(GEOFENCING_TASK, geofenceRegions);
+        } else {
+          console.log('Geofencing wird in Expo Go auf iOS übersprungen (nicht unterstützt).');
+          Alert.alert(
+            'Eingeschränkte Funktionalität',
+            'Geofencing ist in Expo Go auf iOS nicht verfügbar. Verwende einen Development Build oder ein Android-Gerät für volle Funktionalität.'
+          );
+        }
 
         setIsLoading(false);
       } catch (error) {
@@ -168,12 +179,14 @@ const Index = () => {
     })();
 
     return () => {
-      console.log('Geofencing wird gestoppt');
-      Location.stopGeofencingAsync(GEOFENCING_TASK).catch((error) =>
-        console.error('Fehler beim Stoppen von Geofencing:', error)
-      );
+      if (!isExpoGoOnIOS) {
+        console.log('Geofencing wird gestoppt');
+        Location.stopGeofencingAsync(GEOFENCING_TASK).catch((error) =>
+          console.error('Fehler beim Stoppen von Geofencing:', error)
+        );
+      }
     };
-  }, []);
+  }, [isExpoGoOnIOS]);
 
   return (
     <View style={styles.container}>
