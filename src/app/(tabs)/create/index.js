@@ -109,17 +109,17 @@ const Index = () => {
       Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
       return;
     }
-    
+
     if (!isPositiveNumber(radius)) {
       Alert.alert('Fehler', 'Der Radius muss eine positive Zahl sein.');
       return;
     }
-    
+
     if (latitude === '0.0' || longitude === '0.0') {
       Alert.alert('Fehler', 'Bitte setze einen Pin auf der Karte oder gib gültige Koordinaten ein.');
       return;
     }
-    
+
     getItem()
       .then((value) => {
         const newReminder = value ? [...JSON.parse(value), data] : [data];
@@ -186,7 +186,7 @@ const Index = () => {
     if (!numericRegex.test(value.trim())) {
       return false;
     }
-    
+
     const num = parseFloat(value);
     return !isNaN(num) && num > 0 && isFinite(num);
   };
@@ -223,13 +223,13 @@ const Index = () => {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       className="flex-1 bg-black"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 20}
+      behavior='padding'
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 150 : 100}
     >
       <TouchableWithoutFeedback onPress={dismissKeyboard}>
-        <View className="flex-1 bg-black">        
+        <View className="flex-1 bg-black">
           <ScrollView className="flex-1 p-4" keyboardShouldPersistTaps="handled">
             {isLoading ? (
               <LoadingView message="Karte wird geladen..." />
@@ -237,17 +237,17 @@ const Index = () => {
               <Text className="text-red-400 text-base text-center mt-5">{errorMsg}</Text>
             ) : location ? (
               <>
-                <SearchBar 
+                <SearchBar
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
                   isSearching={isSearching}
                 />
-                
-                <SearchResults 
+
+                <SearchResults
                   searchResults={searchResults}
                   handleSelectPlace={handleSelectPlace}
                 />
-                
+
                 <MapView
                   style={styles.map}
                   initialRegion={{
@@ -268,7 +268,7 @@ const Index = () => {
                       }}
                       title={title || 'Neuer Pin'}
                       description={content || 'Von Nutzer gesetzt'}
-                      pinColor="green"
+                      pinColor="#4CAF50"
                     />
                   )}
                   <Marker
@@ -278,54 +278,53 @@ const Index = () => {
                     }}
                     title="Mein Standort"
                     description="Hier bin ich gerade"
-                    pinColor="blue"
+                    pinColor="#33A5F6"
                   />
                 </MapView>
-                
-                <CoordinateInput 
+
+                <CoordinateInput
                   latitude={latitude}
                   longitude={longitude}
                   setData={setData}
                 />
-                
-                <FormField
-                  label="Radius (in Metern)"
-                  placeholder="Radius eingeben (z.B. 100)"
-                  value={radius}
-                  onChangeText={handleRadiusChange}
-                  keyboardType="numeric"
-                  hasError={radius.length > 0 && !isPositiveNumber(radius)}
-                  errorMessage={getRadiusError()}
-                />
-                
-                <FormField
-                  label="Titel"
-                  placeholder="Titel eingeben"
-                  value={title}
-                  onChangeText={(text) => setData((prev) => ({ ...prev, title: text }))}
-                  isRequired={title.length === 0}
-                />
-                
-                <FormField
-                  label="Inhalt"
-                  placeholder="Inhalt eingeben"
-                  value={content}
-                  onChangeText={(text) => setData((prev) => ({ ...prev, content: text }))}
-                  multiline={true}
-                  numberOfLines={6}
-                  isRequired={content.length === 0}
-                />
-                
-                <SubmitButton
-                  onPress={handleSubmit}
-                  disabled={!areAllFieldsValid()}
-                >
-                  {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
-                </SubmitButton>
               </>
             ) : (
               <LoadingView message="Standort wird geladen..." />
             )}
+            <FormField
+              label="Radius (in Metern)"
+              placeholder="Radius eingeben (z.B. 100)"
+              value={radius}
+              onChangeText={handleRadiusChange}
+              keyboardType="numeric"
+              hasError={radius.length > 0 && !isPositiveNumber(radius)}
+              errorMessage={getRadiusError()}
+            />
+
+            <FormField
+              label="Titel"
+              placeholder="Titel eingeben"
+              value={title}
+              onChangeText={(text) => setData((prev) => ({ ...prev, title: text }))}
+              isRequired={title.length === 0}
+            />
+
+            <FormField
+              label="Inhalt"
+              placeholder="Inhalt eingeben"
+              value={content}
+              onChangeText={(text) => setData((prev) => ({ ...prev, content: text }))}
+              multiline={true}
+              numberOfLines={6}
+              isRequired={content.length === 0}
+            />
+
+            <SubmitButton
+              onPress={handleSubmit}
+              disabled={!areAllFieldsValid()}
+            >
+              {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
+            </SubmitButton>
           </ScrollView>
         </View>
       </TouchableWithoutFeedback>
