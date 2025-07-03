@@ -1,28 +1,33 @@
-import Trash from '@/components/Trash';
 import { View,ScrollView ,TextInput, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { useAsyncStorage } from '@react-native-async-storage/async-storage';
+
 
 const Index = () => {
   const [location, setLocation] = useState(null);
 
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [radius, setRadius] = useState('');
-  const [coordinates, setCoordinates] = useState({ latitude: '0.0', longitude: '0.0'})
+  const [data, setData] = useState({
+    title: "",
+    content: "",
+    radius: "",
+    latitude: '0.0',
+    longitude: '0.0'
+  });
+  const { title, content, radius, latitude, longitude } = data
+  const {getItem, setItem} = useAsyncStorage('reminder');
+
 
   const handleSubmit = () => {
-    console.log('Titel:', title);
-    console.log('Inhalt:', content);
+    console.log('data:', data );
+    setItem(JSON.stringify(data))
   };
 
     const dismissKeyboard = () => {
       Keyboard.dismiss();
     };
 
-  
 
   useEffect(() => {
     (async () => {
@@ -64,12 +69,13 @@ const Index = () => {
             />
           </MapView>
         )}
-        <Text className="text-lg text-white  font-bold mb-2 mt-0">Koordinaten</Text> 
+        <Text className="text-lg text-white  font-bold mb-2 mt-0">Koordinaten:</Text> 
           <TextInput
             className="border text-black bg-white border-gray-300 rounded-lg p-3 mb-4"
             placeholder="Radius eingeben"
-            value={coordinates}
-            onChangeText={setCoordinates}
+            readOnly
+            value={latitude + " " + longitude}
+            onChangeText={ (e) => setData((prev) => ({...prev, latitude: e, longitude: e}))}
           />
 
         <Text className="text-lg text-white  font-bold mb-2 mt-0">Radius</Text> 
@@ -77,7 +83,7 @@ const Index = () => {
             className="border text-black bg-white border-gray-300 rounded-lg p-3 mb-4"
             placeholder="Radius eingeben"
             value={radius}
-            onChangeText={setRadius}
+            onChangeText={(e) => setData((prev) => ({...prev, radius: e}))}
           />
 
           
@@ -87,7 +93,7 @@ const Index = () => {
             className="border text-black bg-white border-gray-300 rounded-lg p-3 mb-4"
             placeholder="Titel eingeben"
             value={title}
-            onChangeText={setTitle}
+            onChangeText={(e) => setData((prev) => ({...prev, title: e}))}
           />
 
           <Text className="text-lg text-white font-bold mb-2 mt-0">Inhalt</Text> 
@@ -95,7 +101,7 @@ const Index = () => {
             className="border text-black bg-white border-gray-300 rounded-lg p-3 h-40 text-top mb-4"
             placeholder="Inhalt eingeben"
             value={content}
-            onChangeText={setContent}
+            onChangeText={(e) => setData((prev) => ({...prev, content: e}))}
             multiline={true}
             numberOfLines={6}
           />
