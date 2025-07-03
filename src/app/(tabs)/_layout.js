@@ -42,6 +42,8 @@ export default function Layout() {
           tabBarStyle: {
             backgroundColor: '#000000',
             backgroundColor: '#000000',
+            height: 90,
+            paddingTop: 10,
           },
           headerStyle: { backgroundColor: '#000000', height: Platform.OS === 'ios' ? 120 : 110 },
           headerTintColor: '#ffffff',
@@ -51,10 +53,10 @@ export default function Layout() {
         {tabs?.map(({name, titleTop, title, subtitle, icon, iconFocused}) => {
           return (
             <Tabs.Screen key={name} name={name} options={{
-              title: title,
+              title: '',
               headerTitle: () => <Header title={titleTop} subtitle={subtitle}/>,
               tabBarIcon: ({ color, focused }) => (
-                  <BottomnavIcon name={focused ? iconFocused : icon} color={color}/>
+                  <BottomnavIcon name={focused ? iconFocused : icon} color={color} focused={focused}/>
                 ),
               }}
             />
