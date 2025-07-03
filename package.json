@@ -28,6 +28,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.1",
+    "react-native-google-places-autocomplete": "^2.5.7",
     "react-native-maps": "1.20.1",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "^5.3.0",

@@ -3,11 +3,6 @@ const { withNativeWind } = require("nativewind/metro");
 
 const config = getDefaultConfig(__dirname);
 
-// ❌ Das ist nicht korrekt. 
-// Du überschreibst module.exports zweimal, daher wird nur das zweite module.exports verwendet.
-// Außerdem solltest du withNativeWind auf die finale config anwenden.
-
-// ✅ Korrekte Version:
 const { transformer, resolver } = config;
 
 config.transformer = {

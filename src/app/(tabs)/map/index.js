@@ -113,7 +113,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Check if running in Expo Go on iOS
-  const isExpoGoOnIOS = Constants.appOwnership === 'expo' && Platform.OS === 'ios';
+  const isExpoGoOnIOS = Platform.OS === 'ios'; //Constants.appOwnership === 'expo' &&
 
   useEffect(() => {
     console.log('useEffect gestartet');
