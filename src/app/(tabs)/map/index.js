@@ -29,11 +29,15 @@ TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
   if (data) {
     const { eventType, region } = data;
     if (eventType === Location.GeofencingEventType.Enter) {
-      console.log(`Region betreten: ${region.identifier}`);
+      console.log(`Region betreten: ${JSON.stringify(region)}`);
+      console.log('Region properties:', Object.keys(region));
+      const title = region.identifier || 'Unbekannte Erinnerung';
+      const content = region.notificationMessage || region.identifier || 'Erinnerung ausgelöst';
+
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: 'Willkommen!',
-          body: `Du bist in der Nähe von ${region.identifier}!`,
+          title: 'GeoReminder: ' + title,
+          body: content,
         },
         trigger: null,
       });
@@ -46,22 +50,32 @@ const Map = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const {getItem, setItem} = useAsyncStorage('reminder');  
-  
+  const {getItem, setItem} = useAsyncStorage('reminder');
+
   const [reminderData, setReminderData] = useState([])
 
   // Check if running in Expo Go on iOS
-  const isExpoGoOnIOS = Platform.OS === 'ios'; //Constants.appOwnership === 'expo' &&
+  const isExpoGoOnIOS = Constants.appOwnership === 'expo' && Platform.OS === 'ios';
 
   const getData = () => {
     setIsLoading(true);
+    console.log('Lade Erinnerungsdaten aus AsyncStorage');
     getItem()
       .then((value) => {
-        if (value) {   
-          console.log('reminderData:', JSON.parse(value));             
-          setReminderData(JSON.parse(value))
+        if (value) {
+          console.log('reminderData:', JSON.parse(value));
+          const parsedData = JSON.parse(value);
+          const nummericData = parsedData.map(item => ({
+            ...item,
+            radius: parseFloat(item.radius),
+            latitude: parseFloat(item.latitude),
+            longitude: parseFloat(item.longitude),
+          }));
+          console.log('Parsed reminderData:', nummericData);
+          setReminderData(nummericData);
         }
         else {
+          console.log('Keine Erinnerungen gefunden, setze reminderData auf leeres Array');
           setReminderData([]);
         }
       })
@@ -80,7 +94,11 @@ const Map = () => {
     console.log('useEffect gestartet');
     (async () => {
       try {
-        // Prüfen, ob es ein physisches Gerät ist
+        if (reminderData.length === 0) {
+          console.log('Keine Erinnerungen für Geofencing gefunden');
+          setIsLoading(false);
+          return;
+        }
         if (!Device.isDevice) {
           setErrorMsg('Standortzugriff funktioniert nur auf physischen Geräten.');
           setIsLoading(false);
@@ -122,7 +140,13 @@ const Map = () => {
             setIsLoading(false);
             return;
           }
-          await Location.startGeofencingAsync(GEOFENCING_TASK, reminderData);
+          await Location.startGeofencingAsync(GEOFENCING_TASK, reminderData.map(reminder => ({
+            identifier: reminder.title, // Verwendet title als identifier
+            latitude: reminder.latitude,
+            longitude: reminder.longitude,
+            radius: reminder.radius,
+            notificationMessage: reminder.content, // Speichert content für später
+          })));
         } else {
           console.log('Geofencing wird in Expo Go auf iOS übersprungen (nicht unterstützt).');
           Alert.alert(
@@ -147,7 +171,7 @@ const Map = () => {
         );
       }
     };
-  }, [isExpoGoOnIOS]);
+  }, [isExpoGoOnIOS, reminderData]);
 
   return (
     <View style={styles.container}>

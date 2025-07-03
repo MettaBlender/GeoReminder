@@ -271,15 +271,6 @@ const Index = () => {
                       pinColor="#4CAF50"
                     />
                   )}
-                  <Marker
-                    coordinate={{
-                      latitude: location.latitude,
-                      longitude: location.longitude,
-                    }}
-                    title="Mein Standort"
-                    description="Hier bin ich gerade"
-                    pinColor="#33A5F6"
-                  />
                 </MapView>
 
                 <CoordinateInput

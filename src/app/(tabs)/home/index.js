@@ -11,8 +11,8 @@ export default function Page() {
     router.push('../edit');
   }
 
-  const {getItem, setItem} = useAsyncStorage('reminder');  
-  
+  const {getItem, setItem} = useAsyncStorage('reminder');
+
   const [reminderData, setReminderData] = useState([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -21,8 +21,8 @@ export default function Page() {
     setIsLoading(true);
     getItem()
       .then((value) => {
-        if (value) {   
-          console.log('reminderData:', JSON.parse(value));             
+        if (value) {
+          console.log('reminderData:', JSON.parse(value));
           setReminderData(JSON.parse(value))
         }
         else {
@@ -36,8 +36,8 @@ export default function Page() {
       });
   };
 
-  useEffect(() => {    
-    getData; //habe von Return getData; zu getData; geändert damit getData nicht nur returned wird sonder auch ausgeführt, wenn der component gemountet wird
+  useEffect(() => {
+    getData();
   }, []);
 
   const insets = useSafeAreaInsets();
@@ -51,7 +51,7 @@ export default function Page() {
         contentContainerClassName="px-2.5"
         refreshControl={<RefreshControl
           refreshing={isLoading}
-          onRefresh={() => getData()}            
+          onRefresh={() => getData()}
           colors={["#33a5f6"]}
           tintColor={"#fff"}
         />
