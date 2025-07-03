@@ -6,10 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 
 export default function Page() {
-  const onPress = () => {
-    const router = useRouter();
-    router.push('../edit');
-  }
+  const router = useRouter(); // Moved to top level
 
   const {getItem, setItem} = useAsyncStorage('reminder');
 
@@ -30,8 +27,9 @@ export default function Page() {
         }
       })
       .catch(error => {
-          console.error("Error loading items:", error)
-      }).finally(() => {
+        console.error("Error loading items:", error);
+      })
+      .finally(() => {
         setIsLoading(false);
       });
   };
@@ -40,13 +38,23 @@ export default function Page() {
     getData();
   }, []);
 
+  const onPress = (index) => {
+    console.log('Navigating to edit with id:', index); // For debugging
+    router.push(`/edit?id=${index.toString()}`);
+  };
+
   const insets = useSafeAreaInsets();
   return (
     <View className="flex-1 w-full h-full bg-black" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
       <StatusBar barStyle="light-content"/>
       <FlatList
         data={reminderData}
-        renderItem={({ item, index }) => <ReminderListItem item={item} onPress={onPress}/>}
+        renderItem={({ item, index }) => (
+          <ReminderListItem 
+            item={item} 
+            onPress={() => onPress(index)} // Pass a function that calls onPress with index
+          />
+        )}
         keyExtractor={(_, index) => index.toString()}
         contentContainerClassName="px-2.5"
         refreshControl={<RefreshControl

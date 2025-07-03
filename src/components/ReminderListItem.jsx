@@ -1,12 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import Ionicons from "@expo/vector-icons/MaterialIcons"
-import MaterialIcons from "@expo/vector-icons/MaterialIcons"
-import { Link } from 'expo-router';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import "../global.css";
 import Logo from '../assets/logo.svg'; // Adjust path if necessary
 
-const ReminderListItem = ({item, onPresss}) => {
+const ReminderListItem = ({ item, onPress }) => {
   return (
     <View className='flex-row items-center p-2.5 border-b border-white'>
         <View>
@@ -16,11 +14,9 @@ const ReminderListItem = ({item, onPresss}) => {
             <Text className="text-white text-lg font-bold">{item.title}</Text>
             <Text className="text-white text-base">{item.content}</Text>
         </View>
-        <Link href="/edit" asChild>
-          <TouchableOpacity onPress={onPresss}>
-              <MaterialIcons size={28} style={{ margin: -3 }} name="edit" color="white"/>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity onPress={onPress}>
+            <MaterialIcons size={28} style={{ margin: -3 }} name="edit" color="white"/>
+        </TouchableOpacity>
     </View>
   )
 }
