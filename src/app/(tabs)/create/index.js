@@ -9,6 +9,7 @@ import FormField from '../../../components/FormField';
 import CoordinateInput from '../../../components/CoordinateInput';
 import SubmitButton from '../../../components/SubmitButton';
 import LoadingView from '../../../components/LoadingView';
+import { router } from 'expo-router';
 
 const Index = () => {
   const [location, setLocation] = useState(null);
@@ -132,7 +133,7 @@ const Index = () => {
           longitude: '0.0',
         });
         setSearchQuery('');
-        Alert.alert('Erfolg', 'Erinnerung wurde gespeichert!');
+        router.push('/home');
       })
       .catch((error) => {
         console.error('Error saving reminder:', error);

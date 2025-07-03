@@ -56,7 +56,7 @@ export default function Layout() {
               title: '',
               headerTitle: () => <Header title={titleTop} subtitle={subtitle}/>,
               tabBarIcon: ({ color, focused }) => (
-                  <BottomnavIcon name={focused ? iconFocused : icon} color={color} focused={focused}/>
+                  <BottomnavIcon name={focused ? iconFocused : icon}/>
                 ),
               }}
             />

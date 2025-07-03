@@ -5,20 +5,8 @@ import MaskedView from '@react-native-masked-view/masked-view'
 import { LinearGradient } from 'expo-linear-gradient';
 
 
-const BottomnavIcon = ({ name, color, focused }) => {
+const BottomnavIcon = ({ name}) => {
   const size = 28;
-
-  if (focused && false) {
-    return (
-      <Ionicons
-        size={size}
-        style={{ marginBottom: -3 }}
-        name={name}
-        color={color}
-      />
-    );
-  }
-
 
   return (
     <View style={{width: size + 15, height: size + 15, borderRadius: (size + 15) / 2, justifyContent: 'center', alignItems: 'center'}}>

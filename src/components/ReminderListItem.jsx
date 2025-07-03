@@ -7,7 +7,7 @@ import Logo from '../assets/logo.svg'; // Adjust path if necessary
 const ReminderListItem = ({ item, onPress }) => {
   return (
     <View className='flex-row items-center p-2.5 border-b border-white'>
-        <View>
+        <View className='mr-4'>
           <Logo width={28} height={28} />
         </View>
         <View className="flex-1">
