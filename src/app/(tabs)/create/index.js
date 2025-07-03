@@ -1,31 +1,34 @@
-import { View, ScrollView, TextInput, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, ActivityIndicator, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import SearchBar from '../../../components/SearchBar';
+import SearchResults from '../../../components/SearchResults';
+import FormField from '../../../components/FormField';
+import CoordinateInput from '../../../components/CoordinateInput';
+import SubmitButton from '../../../components/SubmitButton';
+import LoadingView from '../../../components/LoadingView';
 
 const Index = () => {
   const [location, setLocation] = useState(null);
-  const [region, setRegion] = useState({
-    latitude: 46.9479739,
-    longitude: 7.4474468,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  });
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
   const [data, setData] = useState({
     title: '',
     content: '',
     radius: '',
-    latitude: '46.9479739',
-    longitude: '7.4474468',
+    latitude: '0.0',
+    longitude: '0.0',
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const { title, content, radius, latitude, longitude } = data;
   const { getItem, setItem } = useAsyncStorage('reminder');
 
-  // Handler für Map-Tap (Pin setzen)
+  const searchCache = {};
+
   const handleMapPress = (e) => {
     const { latitude, longitude } = e.nativeEvent.coordinate;
     setData((prev) => ({
@@ -33,44 +36,103 @@ const Index = () => {
       latitude: latitude.toString(),
       longitude: longitude.toString(),
     }));
-    console.log('Neuer Pin gesetzt:', { latitude, longitude });
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
-  // Handler für Absenden
+  const handleSearch = async (query) => {
+    if (query.length < 3) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      if (searchCache[query]) {
+        setSearchResults(searchCache[query]);
+        setIsSearching(false);
+        return;
+      }
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`,
+        {
+          headers: {
+            'User-Agent': 'MeineKartenApp/1.0 (dein.email@example.com)',
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP Fehler: ${response.status} ${response.statusText}`);
+      }
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Unerwartete Antwort:', text);
+        throw new Error('Antwort ist kein JSON');
+      }
+      const results = await response.json();
+      setSearchResults(results);
+      searchCache[query] = results;
+    } catch (error) {
+      console.error('Fehler bei der Suche:', error.message);
+      Alert.alert('Fehler', 'Suche konnte nicht durchgeführt werden. Bitte versuche es später erneut.');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectPlace = (place) => {
+    const lat = parseFloat(place.lat);
+    const lon = parseFloat(place.lon);
+    setData((prev) => ({
+      ...prev,
+      latitude: lat.toString(),
+      longitude: lon.toString(),
+      title: place.display_name.split(',')[0] || prev.title,
+    }));
+    setLocation((prev) => ({
+      ...prev,
+      region: {
+        latitude: lat,
+        longitude: lon,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      },
+    }));
+    setSearchQuery(place.display_name);
+    setSearchResults([]);
+  };
+
   const handleSubmit = () => {
-    if (!title || !content || !radius || !latitude || !longitude) {
+    if (!title.trim() || !content.trim() || !radius.trim() || !latitude || !longitude) {
       Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
       return;
     }
-    console.log('Data:', data);
+    
+    if (!isPositiveNumber(radius)) {
+      Alert.alert('Fehler', 'Der Radius muss eine positive Zahl sein.');
+      return;
+    }
+    
+    if (latitude === '0.0' || longitude === '0.0') {
+      Alert.alert('Fehler', 'Bitte setze einen Pin auf der Karte oder gib gültige Koordinaten ein.');
+      return;
+    }
+    
     getItem()
       .then((value) => {
-        let existingReminders = [];
-        try {
-          existingReminders = value ? JSON.parse(value) : [];
-          // Sicherstellen, dass es ein Array ist
-          if (!Array.isArray(existingReminders)) {
-            existingReminders = [];
-          }
-        } catch (parseError) {
-          console.error('Error parsing stored data:', parseError);
-          existingReminders = [];
-        }
-        
-        const newReminder = [...existingReminders, data];
-        console.log('New Reminder:', newReminder);
+        const newReminder = value ? [...JSON.parse(value), data] : [data];
         setItem(JSON.stringify(newReminder));
-        
-        Alert.alert('Erfolg', 'Erinnerung wurde gespeichert!');
-        
-        // Zurücksetzen der Eingabefelder
         setData({
           title: '',
           content: '',
           radius: '',
-          latitude: currentLocation.coords.latitude.toString(),
-          longitude: currentLocation.coords.longitude.toString(),
+          latitude: '0.0',
+          longitude: '0.0',
         });
+        setSearchQuery('');
+        Alert.alert('Erfolg', 'Erinnerung wurde gespeichert!');
       })
       .catch((error) => {
         console.error('Error saving reminder:', error);
@@ -80,7 +142,17 @@ const Index = () => {
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
+    setSearchResults([]);
   };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (searchQuery) {
+        handleSearch(searchQuery);
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   useEffect(() => {
     (async () => {
@@ -100,20 +172,6 @@ const Index = () => {
           latitude: currentLocation.coords.latitude,
           longitude: currentLocation.coords.longitude,
         });
-        setRegion({
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        });
-        
-        // Initialisiere die Koordinaten mit dem aktuellen Standort
-        setData(prev => ({
-          ...prev,
-          latitude: currentLocation.coords.latitude.toString(),
-          longitude: currentLocation.coords.longitude.toString(),
-        }));
-        
         setIsLoading(false);
       } catch (error) {
         console.error('Fehler beim Abrufen des Standorts:', error);
@@ -123,77 +181,81 @@ const Index = () => {
     })();
   }, []);
 
+  const isPositiveNumber = (value) => {
+    const numericRegex = /^[0-9]+(\.[0-9]+)?$/;
+    if (!numericRegex.test(value.trim())) {
+      return false;
+    }
+    
+    const num = parseFloat(value);
+    return !isNaN(num) && num > 0 && isFinite(num);
+  };
+
+  const areAllFieldsValid = () => {
+    return (
+      title.trim() !== '' &&
+      content.trim() !== '' &&
+      radius.trim() !== '' &&
+      isPositiveNumber(radius) &&
+      latitude !== '0.0' &&
+      longitude !== '0.0' &&
+      latitude.trim() !== '' &&
+      longitude.trim() !== ''
+    );
+  };
+
+  const handleRadiusChange = (text) => {
+    const numericText = text.replace(/[^0-9.]/g, '');
+    const parts = numericText.split('.');
+    const filteredText = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericText;
+    setData((prev) => ({ ...prev, radius: filteredText }));
+  };
+
+  const getRadiusError = () => {
+    if (radius.length === 0) return null;
+    if (!/^[0-9]+(\.[0-9]+)?$/.test(radius.trim())) {
+      return 'Bitte gib nur Ziffern ein (z.B. 100 oder 50.5).';
+    }
+    if (!isPositiveNumber(radius)) {
+      return 'Bitte gib eine positive Zahl für den Radius ein (z.B. 100 für 100 Meter).';
+    }
+    return null;
+  };
+
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
-      <View style={styles.container}>
-        {/* Plattformspezifischer Header */}
-        <View
-          style={[
-            styles.header,
-            Platform.OS === 'ios' ? styles.headerIOS : styles.headerAndroid,
-          ]}
-        >
-          <Text style={styles.headerText}>Meine Karten-App</Text>
-          {Platform.OS === 'ios' && (
-            <Text style={styles.headerSubText}>iOS-spezifische Nachricht</Text>
-          )}
-        </View>
-        <ScrollView style={styles.scrollContainer}>
+      <View className="flex-1 bg-black">        
+        <ScrollView className="flex-1 p-4">
           {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#ffffff" />
-              <Text style={styles.loadingText}>Standort wird geladen...</Text>
-            </View>
+            <LoadingView message="Karte wird geladen..." />
           ) : errorMsg ? (
-            <Text style={styles.errorText}>{errorMsg}</Text>
-          ) : (
+            <Text className="text-red-400 text-base text-center mt-5">{errorMsg}</Text>
+          ) : location ? (
             <>
-              {/* GooglePlacesAutocomplete temporär deaktiviert für Debugging */}
-              {/* <GooglePlacesAutocomplete
-                placeholder="Ort suchen (z.B. Bern, Schweiz)"
-                onPress={(data, details = null) => {
-                  if (details) {
-                    const { lat, lng } = details.geometry.location;
-                    setData((prev) => ({
-                      ...prev,
-                      latitude: lat.toString(),
-                      longitude: lng.toString(),
-                      title: data.description || prev.title,
-                    }));
-                    setRegion({
-                      latitude: lat,
-                      longitude: lng,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    });
-                    setLocation({
-                      latitude: lat,
-                      longitude: lng,
-                    });
-                    console.log('Gesuchter Ort:', { latitude: lat, longitude: lng });
-                  }
-                }}
-                fetchDetails={true}
-                query={{
-                  key: 'DEIN_GOOGLE_API_SCHLÜSSEL',
-                  language: 'de',
-                  types: '(cities)|address|establishment',
-                }}
-                styles={{
-                  container: styles.searchContainer,
-                  textInput: styles.searchInput,
-                  listView: styles.searchListView,
-                }}
-                enablePoweredByContainer={false}
-              /> */}
+              <SearchBar 
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                isSearching={isSearching}
+              />
+              
+              <SearchResults 
+                searchResults={searchResults}
+                handleSelectPlace={handleSelectPlace}
+              />
+              
               <MapView
                 style={styles.map}
-                initialRegion={region}
-                region={region}
+                initialRegion={{
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                region={location.region}
                 showsUserLocation={true}
                 onPress={handleMapPress}
               >
-                {latitude && longitude && parseFloat(latitude) !== 0.0 && parseFloat(longitude) !== 0.0 && (
+                {parseFloat(latitude) !== 0.0 && parseFloat(longitude) !== 0.0 && (
                   <Marker
                     coordinate={{
                       latitude: parseFloat(latitude),
@@ -204,66 +266,60 @@ const Index = () => {
                     pinColor="green"
                   />
                 )}
-                {location && location.latitude && location.longitude && (
-                  <Marker
-                    coordinate={{
-                      latitude: location.latitude,
-                      longitude: location.longitude,
-                    }}
-                    title="Mein Standort"
-                    description="Hier bin ich gerade"
-                    pinColor="blue"
-                  />
-                )}
+                <Marker
+                  coordinate={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  }}
+                  title="Mein Standort"
+                  description="Hier bin ich gerade"
+                  pinColor="blue"
+                />
               </MapView>
-              <Text style={styles.label}>Koordinaten</Text>
-              <View style={styles.coordinateContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Latitude"
-                  placeholderTextColor="#999"
-                  value={latitude}
-                  onChangeText={(text) => setData((prev) => ({ ...prev, latitude: text }))}
-                  keyboardType="numeric"
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Longitude"
-                  placeholderTextColor="#999"
-                  value={longitude}
-                  onChangeText={(text) => setData((prev) => ({ ...prev, longitude: text }))}
-                  keyboardType="numeric"
-                />
-              </View>
-              <Text style={styles.label}>Radius</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Radius eingeben"
-                value={radius}
-                onChangeText={(text) => setData((prev) => ({ ...prev, radius: text }))}
-                keyboardType="numeric"
+              
+              <CoordinateInput 
+                latitude={latitude}
+                longitude={longitude}
+                setData={setData}
               />
-              <Text style={styles.label}>Titel</Text>
-              <TextInput
-                style={styles.input}
+              
+              <FormField
+                label="Radius (in Metern)"
+                placeholder="Radius eingeben (z.B. 100)"
+                value={radius}
+                onChangeText={handleRadiusChange}
+                keyboardType="numeric"
+                hasError={radius.length > 0 && !isPositiveNumber(radius)}
+                errorMessage={getRadiusError()}
+              />
+              
+              <FormField
+                label="Titel"
                 placeholder="Titel eingeben"
                 value={title}
                 onChangeText={(text) => setData((prev) => ({ ...prev, title: text }))}
+                isRequired={title.length === 0}
               />
-              <Text style={styles.label}>Inhalt</Text>
-              <TextInput
-                style={styles.input}
+              
+              <FormField
+                label="Inhalt"
                 placeholder="Inhalt eingeben"
                 value={content}
                 onChangeText={(text) => setData((prev) => ({ ...prev, content: text }))}
                 multiline={true}
                 numberOfLines={6}
-                textAlignVertical="top"
+                isRequired={content.length === 0}
               />
-              <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                <Text style={styles.submitButtonText}>Absenden</Text>
-              </TouchableOpacity>
+              
+              <SubmitButton
+                onPress={handleSubmit}
+                disabled={!areAllFieldsValid()}
+              >
+                {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
+              </SubmitButton>
             </>
+          ) : (
+            <LoadingView message="Standort wird geladen..." />
           )}
         </ScrollView>
       </View>
@@ -272,110 +328,11 @@ const Index = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  header: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#555',
-  },
-  headerIOS: {
-    height: 100,
-    backgroundColor: '#007AFF',
-  },
-  headerAndroid: {
-    height: 60,
-    backgroundColor: '#3F51B5',
-  },
-  headerText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  headerSubText: {
-    color: '#fff',
-    fontSize: 16,
-    marginTop: 5,
-  },
-  scrollContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  searchContainer: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  searchInput: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    color: '#000',
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  searchListView: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
   map: {
     width: '100%',
     height: 300,
     marginBottom: 16,
     borderRadius: 10,
-  },
-  coordinateContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    color: '#000',
-  },
-  label: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  submitButton: {
-    backgroundColor: '#22c55e',
-    borderRadius: 8,
-    padding: 16,
-    marginVertical: 16,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontSize: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  errorText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 20,
   },
 });
 
