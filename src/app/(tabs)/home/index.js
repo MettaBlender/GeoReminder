@@ -6,16 +6,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 
 export default function Page() {
-  const onPress = () => {
-    const router = useRouter();
-    router.push('../edit');
-  }
+  const router = useRouter(); // Moved to top level
 
-  const {getItem, setItem} = useAsyncStorage('reminder');  
-  
-  const [reminderData, setReminderData] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-
+  const { getItem, setItem } = useAsyncStorage('reminder');  
+  const [reminderData, setReminderData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const getData = () => {
     setIsLoading(true);
@@ -23,22 +18,27 @@ export default function Page() {
       .then((value) => {
         if (value) {   
           console.log('reminderData:', JSON.parse(value));             
-          setReminderData(JSON.parse(value))
-        }
-        else {
+          setReminderData(JSON.parse(value));
+        } else {
           setReminderData([]);
         }
       })
       .catch(error => {
-          console.error("Error loading items:", error)
-      }).finally(() => {
+        console.error("Error loading items:", error);
+      })
+      .finally(() => {
         setIsLoading(false);
       });
   };
 
   useEffect(() => {    
-    getData; //habe von Return getData; zu getData; geändert damit getData nicht nur returned wird sonder auch ausgeführt, wenn der component gemountet wird
+    getData(); // Fixed to call the function
   }, []);
+
+  const onPress = (index) => {
+    console.log('Navigating to edit with id:', index); // For debugging
+    router.push(`/edit?id=${index.toString()}`);
+  };
 
   const insets = useSafeAreaInsets();
   return (
@@ -46,23 +46,29 @@ export default function Page() {
       <StatusBar barStyle="light-content"/>
       <FlatList
         data={reminderData}
-        renderItem={({ item, index }) => <ReminderListItem item={item} onPress={onPress}/>}
+        renderItem={({ item, index }) => (
+          <ReminderListItem 
+            item={item} 
+            onPress={() => onPress(index)} // Pass a function that calls onPress with index
+          />
+        )}
         keyExtractor={(_, index) => index.toString()}
-        contentContainerClassName="px-2.5"
-        refreshControl={<RefreshControl
-          refreshing={isLoading}
-          onRefresh={() => getData()}            
-          colors={["#33a5f6"]}
-          tintColor={"#fff"}
-        />
-      }
-      ListEmptyComponent={() => (
-        !isLoading && (
-          <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 20 }}>
-            <Text style={{ color: "white" }}>Noch gibt es Keine Erinnerungen...</Text>
-          </View>
-        )
-      )}
+        contentContainerStyle={{ paddingHorizontal: 10 }} // Fixed from contentContainerClassName
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => getData()}            
+            colors={["#33a5f6"]}
+            tintColor={"#fff"}
+          />
+        }
+        ListEmptyComponent={() => (
+          !isLoading && (
+            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 20 }}>
+              <Text style={{ color: "white" }}>Noch gibt es Keine Erinnerungen...</Text>
+            </View>
+          )
+        )}
       />
     </View>
   );
