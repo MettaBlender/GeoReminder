@@ -1,4 +1,4 @@
-import { View, Text, Alert, ActivityIndicator, Platform, StyleSheet } from 'react-native';
+import { View, Text, Alert, ActivityIndicator, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 import React, { useState, useEffect, memo } from 'react';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
@@ -7,7 +7,8 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import MemoizedMapView from '../../../components/MemoizedMapView';
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const GEOFENCING_TASK = 'background-location-task';
 
@@ -49,6 +50,8 @@ const Map = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [initialRegion, setInitialRegion] = useState(null);
   const [followsUser, setFollowsUser] = useState(false);
+  const [hasReminderParams, setHasReminderParams] = useState(false);
+  const [lastReminderPosition, setLastReminderPosition] = useState(null);
 
   const {getItem} = useAsyncStorage('reminder');
   const { getItem: getCurrentUser } = useAsyncStorage('currentUser');
@@ -92,36 +95,79 @@ const Map = () => {
     }
   };
 
-  // Prüfe URL-Parameter und setze initialRegion
-  useEffect(() => {
-    if (params.latitude && params.longitude) {
-      const lat = parseFloat(params.latitude);
-      const lon = parseFloat(params.longitude);
+  // Reagiere auf Tab-Wechsel: Zeige immer letzten Reminder oder aktuelle Position
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Map-Tab wurde fokussiert');
+      console.log('Parameter beim Focus:', params);
+      console.log('From-Parameter:', params.from);
 
-      if (!isNaN(lat) && !isNaN(lon)) {
-        console.log('Verwende URL-Parameter für Kartenposition:', lat, lon);
-        setInitialRegion({
-          latitude: lat,
-          longitude: lon,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        });
-        setLocation({
-          latitude: lat,
-          longitude: lon,
-        });
-        setFollowsUser(false); // Nicht der aktuellen Position folgen
-        setIsLoading(false);
-        return;
-      }
-    }
+      // Kleine Verzögerung, um sicherzustellen, dass Parameter korrekt geladen sind
+      setTimeout(() => {
+        // Prüfe, ob wir vom Home-Tab kommen und Reminder-Parameter haben
+        if (params.latitude && params.longitude && params.from === 'home') {
+          const lat = parseFloat(params.latitude);
+          const lon = parseFloat(params.longitude);
 
-    // Nur aktuellen Standort laden und fokussieren, wenn keine Parameter vorhanden sind
-    setFollowsUser(true); // Der aktuellen Position folgen
-    loadCurrentLocation();
-  }, [params.latitude, params.longitude]);
+          if (!isNaN(lat) && !isNaN(lon)) {
+            console.log('Focus: Vom Home-Tab - Verwende Reminder-Parameter für Kartenposition:', lat, lon);
+            setHasReminderParams(true);
+            setLastReminderPosition({ latitude: lat, longitude: lon });
+            setInitialRegion({
+              latitude: lat,
+              longitude: lon,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            });
+            setLocation({
+              latitude: lat,
+              longitude: lon,
+            });
+            setFollowsUser(false);
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Wenn letzter Reminder vorhanden ist, zeige ihn an
+        if (lastReminderPosition) {
+          console.log('Focus: Zeige letzten Reminder an:', lastReminderPosition);
+          setHasReminderParams(true);
+          setInitialRegion({
+            latitude: lastReminderPosition.latitude,
+            longitude: lastReminderPosition.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          });
+          setLocation({
+            latitude: lastReminderPosition.latitude,
+            longitude: lastReminderPosition.longitude,
+          });
+          setFollowsUser(false);
+          setIsLoading(false);
+          return;
+        }
+
+        // Alle anderen Fälle - zur aktuellen Position zurückkehren
+        console.log('Focus: Keine Reminder-Parameter - kehre zur aktuellen Position zurück');
+        setHasReminderParams(false);
+        setFollowsUser(true);
+        loadCurrentLocation();
+      }, 100);
+
+      // Cleanup-Funktion: Wird ausgeführt, wenn der Tab verlassen wird
+      return () => {
+        console.log('Map-Tab wird verlassen - lösche Parameter');
+        if (params.latitude || params.longitude || params.from) {
+          router.replace('/map');
+        }
+      };
+    }, [params.latitude, params.longitude, params.from, lastReminderPosition])
+  );
+
   const loadCurrentLocation = async () => {
     console.log('Lade aktuellen Standort');
+    setIsLoading(true);
     try {
       const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
       if (foregroundStatus !== 'granted') {
@@ -139,7 +185,7 @@ const Map = () => {
       setInitialRegion({
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
-        latitudeDelta: 0.005, // Kleinere Delta für besseren Fokus auf aktuelle Position
+        latitudeDelta: 0.005,
         longitudeDelta: 0.005,
       });
       setIsLoading(false);
@@ -207,7 +253,7 @@ const Map = () => {
   useEffect(() => {
     let locationSubscription = null;
 
-    if (followsUser && !params.latitude && !params.longitude) {
+    if (followsUser && !hasReminderParams) {
       const startLocationTracking = async () => {
         try {
           const { status } = await Location.requestForegroundPermissionsAsync();
@@ -215,8 +261,8 @@ const Map = () => {
             locationSubscription = await Location.watchPositionAsync(
               {
                 accuracy: Location.Accuracy.Balanced,
-                timeInterval: 5000, // Update alle 5 Sekunden
-                distanceInterval: 10, // Update bei 10 Meter Bewegung
+                timeInterval: 5000,
+                distanceInterval: 10,
               },
               (newLocation) => {
                 console.log('Neue Position erhalten:', newLocation.coords);
@@ -243,7 +289,16 @@ const Map = () => {
         locationSubscription.remove();
       }
     };
-  }, [followsUser, params.latitude, params.longitude]);
+  }, [followsUser, hasReminderParams]);
+
+  const goToCurrentLocation = () => {
+    console.log('Benutzer möchte zur aktuellen Position zurückkehren');
+    setHasReminderParams(false);
+    setFollowsUser(true);
+    // Lösche die Parameter aus der URL
+    router.replace('/map');
+    loadCurrentLocation();
+  };
 
   if (errorMsg) {
     return (
@@ -261,18 +316,26 @@ const Map = () => {
           <Text style={styles.loadingText}>Karte wird geladen...</Text>
         </View>
       ) : initialRegion ? (
-        <MemoizedMapView
-          style={styles.map}
-          region={initialRegion}
-          showsUserLocation={true}
-          followsUserLocation={followsUser}
-          onRegionChangeComplete={(region) => {
-            if (!followsUser) {
-              setInitialRegion(region);
-            }
-          }}
-          reminderData={reminderData}
-        />
+        <>
+          <MemoizedMapView
+            style={styles.map}
+            region={initialRegion}
+            showsUserLocation={true}
+            followsUserLocation={followsUser}
+            onRegionChangeComplete={(region) => {
+              if (!followsUser) {
+                setInitialRegion(region);
+              }
+            }}
+            reminderData={reminderData}
+          />
+          <TouchableOpacity
+            style={styles.locationButton}
+            onPress={goToCurrentLocation}
+          >
+            <Ionicons name="locate" size={24} color="#fff" />
+          </TouchableOpacity>
+        </>
       ) : (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#33a5f6" />
@@ -309,6 +372,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     margin: 20,
     fontSize: 16,
+  },
+  locationButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    backgroundColor: '#33a5f6',
+    borderRadius: 28,
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
 

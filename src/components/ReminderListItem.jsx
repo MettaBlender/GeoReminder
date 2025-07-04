@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 
 const ReminderListItem = ({ item, onPress }) => {
   const handleMapPress = () => {
-    router.push(`/map?latitude=${item.latitude}&longitude=${item.longitude}`);
+    router.push(`/map?latitude=${item.latitude}&longitude=${item.longitude}&from=home`);
   };
 
   return (
