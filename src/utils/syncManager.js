@@ -4,16 +4,13 @@ const API_BASE_URL = 'https://geo-reminder-backend.vercel.app';
 
 export class SyncManager {
   constructor() {
-    // Prüfe, ob AsyncStorage verfügbar ist
     if (!AsyncStorage) {
       console.error('AsyncStorage ist nicht verfügbar!');
       throw new Error('AsyncStorage ist nicht verfügbar');
     }
 
-    // Verwende AsyncStorage direkt
     this.storage = AsyncStorage;
 
-    // Teste AsyncStorage beim Start
     this.testAsyncStorage();
   }
 
@@ -62,7 +59,6 @@ export class SyncManager {
       const value = await this.storage.getItem('reminder');
       const allReminders = value ? JSON.parse(value) : {};
 
-      // Migration von alter Datenstruktur
       if (Array.isArray(allReminders)) {
         const migrated = { 'unsigned': allReminders };
         await this.storage.setItem('reminder', JSON.stringify(migrated));
@@ -72,7 +68,7 @@ export class SyncManager {
       return allReminders[userId] || [];
     } catch (error) {
       console.error('Fehler beim Laden lokaler Reminders:', error);
-      return []; // Leeres Array zurückgeben bei Fehler
+      return [];
     }
   }
 
@@ -81,13 +77,11 @@ export class SyncManager {
       const value = await this.storage.getItem('reminder');
       const allReminders = value ? JSON.parse(value) : {};
 
-      // Migration von alter Datenstruktur
       if (Array.isArray(allReminders)) {
         const migrated = { 'unsigned': allReminders };
         await this.storage.setItem('reminder', JSON.stringify(migrated));
       }
 
-      // Füge Timestamps und lokale IDs hinzu falls sie fehlen
       const remindersWithMetadata = reminders.map(reminder => ({
         ...reminder,
         created_at: reminder.created_at || new Date().toISOString(),
@@ -144,7 +138,6 @@ export class SyncManager {
       console.log('Lokale Reminders:', localReminders.length);
       console.log('Letzte Sync-Zeit:', lastSync);
 
-      // Formatiere Reminders für Backend
       const formattedReminders = localReminders.map(reminder => ({
         title: reminder.title,
         content: reminder.content,
@@ -157,7 +150,6 @@ export class SyncManager {
 
       console.log('Formatierte Reminders für Backend:', formattedReminders);
 
-      // Benutze den optimierten Sync-Endpoint
       const response = await fetch(`${API_BASE_URL}/api/reminders/sync`, {
         method: 'POST',
         headers: {
@@ -182,17 +174,16 @@ export class SyncManager {
       console.log('Server-Antwort:', result);
       console.log('Server-Reminders:', serverReminders.length);
 
-      // Aktualisiere lokale Daten mit Server-Daten
-      await this.saveLocalReminders(userId, serverReminders);
+      const mergedReminders = await this.mergeServerAndLocalData(userId, serverReminders);
+      await this.saveLocalReminders(userId, mergedReminders);
 
-      // Aktualisiere Sync-Zeit
       await this.setLastSyncTime(userId, result.serverTime);
 
-      console.log('Synchronisation erfolgreich:', serverReminders.length, 'Reminders');
+      console.log('Synchronisation erfolgreich:', mergedReminders.length, 'Reminders');
 
       return {
         success: true,
-        data: serverReminders,
+        data: mergedReminders,
         serverTime: result.serverTime
       };
     } catch (error) {
@@ -204,7 +195,6 @@ export class SyncManager {
     try {
       const currentTime = new Date().toISOString();
 
-      // Stelle sicher, dass eine lokale ID vorhanden ist
       if (!reminderData.localId) {
         reminderData.localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       }
@@ -220,19 +210,16 @@ export class SyncManager {
       console.log('Erstelle Reminder für User:', userId);
       console.log('Reminder-Daten:', newReminder);
 
-      // Speichere lokal
       const localReminders = await this.getLocalReminders(userId);
       localReminders.push(newReminder);
       await this.saveLocalReminders(userId, localReminders);
 
-      // Sync mit Backend NUR wenn Benutzer eingeloggt ist
       const user = await this.getCurrentUser();
       const token = await this.getAuthToken();
 
       if (user && user.id !== 'unsigned' && token) {
         console.log('Benutzer ist eingeloggt - synchronisiere mit Backend');
 
-        // Direkte Backend-Erstellung für sofortiges Feedback
         try {
           const response = await fetch(`${API_BASE_URL}/api/reminders`, {
             method: 'POST',
@@ -257,16 +244,14 @@ export class SyncManager {
             const result = await response.json();
             console.log('Backend-Erstellung erfolgreich:', result);
 
-            // Aktualisiere lokale Daten mit Backend-Antwort und markiere als synchronisiert
             if (result.data && result.data.length > 0) {
               const syncedReminders = result.data.map(serverReminder => ({
                 ...serverReminder,
-                localId: newReminder.localId, // Behalte lokale ID
+                localId: newReminder.localId,
                 synced: true,
-                serverId: serverReminder.id // Speichere Server-ID
+                serverId: serverReminder.id
               }));
 
-              // Ersetze den lokalen Reminder mit dem synchronisierten
               const updatedReminders = localReminders.map(r =>
                 r.localId === newReminder.localId ? syncedReminders[0] : r
               );
@@ -291,6 +276,36 @@ export class SyncManager {
     }
   }
 
+  async createLocalReminder(userId, reminderData) {
+    try {
+      const currentTime = new Date().toISOString();
+
+      if (!reminderData.localId) {
+        reminderData.localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+
+      const newReminder = {
+        ...reminderData,
+        created_at: currentTime,
+        updated_at: currentTime,
+        isDeleted: false,
+        synced: false
+      };
+
+      console.log('Erstelle lokalen Reminder für User:', userId);
+      console.log('Reminder-Daten:', newReminder);
+
+      const localReminders = await this.getLocalReminders(userId);
+      localReminders.push(newReminder);
+      await this.saveLocalReminders(userId, localReminders);
+
+      return newReminder;
+    } catch (error) {
+      console.error('Fehler beim lokalen Erstellen des Reminders:', error);
+      throw error;
+    }
+  }
+
   async updateReminder(userId, identifier, reminderData) {
     try {
       const currentTime = new Date().toISOString();
@@ -298,15 +313,11 @@ export class SyncManager {
 
       let index = -1;
 
-      // Suche den Reminder über lokale ID oder Index
       if (typeof identifier === 'string' && identifier.startsWith('local_')) {
-        // Suche nach lokaler ID
         index = localReminders.findIndex(r => r.localId === identifier);
       } else if (typeof identifier === 'number') {
-        // Behandle als Array-Index (Legacy-Unterstützung)
         index = identifier;
       } else {
-        // Suche nach lokaler ID oder anderen Eigenschaften
         index = localReminders.findIndex(r =>
           r.localId === identifier ||
           r.serverId === identifier ||
@@ -322,7 +333,7 @@ export class SyncManager {
         ...localReminders[index],
         ...reminderData,
         updated_at: currentTime,
-        synced: false // Markiere als nicht synchronisiert
+        synced: false
       };
 
       localReminders[index] = updatedReminder;
@@ -330,7 +341,6 @@ export class SyncManager {
 
       console.log('Reminder lokal aktualisiert:', updatedReminder.localId || updatedReminder.title);
 
-      // Sync mit Backend NUR wenn Benutzer eingeloggt ist
       const user = await this.getCurrentUser();
       const token = await this.getAuthToken();
 
@@ -352,14 +362,11 @@ export class SyncManager {
     try {
       const localReminders = await this.getLocalReminders(userId);
 
-      // Suche den Reminder über lokale ID oder andere Eigenschaften
       let index = -1;
 
       if (reminder.localId) {
-        // Suche nach lokaler ID
         index = localReminders.findIndex(r => r.localId === reminder.localId);
       } else {
-        // Fallback: Suche nach anderen Eigenschaften
         index = localReminders.findIndex(r =>
           r.title === reminder.title &&
           r.content === reminder.content &&
@@ -378,7 +385,6 @@ export class SyncManager {
 
       console.log('Reminder lokal gelöscht:', deletedReminder.localId || deletedReminder.title);
 
-      // Lösche auch vom Backend NUR wenn Benutzer eingeloggt ist
       const user = await this.getCurrentUser();
       const token = await this.getAuthToken();
 
@@ -395,7 +401,6 @@ export class SyncManager {
           console.log('Reminder auch vom Backend gelöscht');
         } catch (backendError) {
           console.error('Fehler beim Löschen vom Backend:', backendError);
-          // Synchronisation wird später das Problem lösen
         }
       } else {
         console.log('Benutzer ist nicht eingeloggt - nur lokale Löschung');
@@ -412,7 +417,6 @@ export class SyncManager {
     try {
       const localReminders = await this.getLocalReminders(userId);
 
-      // Sync mit Backend NUR wenn Benutzer eingeloggt ist
       const user = await this.getCurrentUser();
       const token = await this.getAuthToken();
 
@@ -420,9 +424,9 @@ export class SyncManager {
         console.log('Benutzer ist eingeloggt - synchronisiere mit Backend');
         const syncResult = await this.syncWithBackend(userId);
         if (syncResult.success) {
-          return { success: true, data: syncResult.data };
+          const updatedLocalReminders = await this.getLocalReminders(userId);
+          return { success: true, data: updatedLocalReminders };
         }
-        // Fallback auf lokale Daten wenn Sync fehlschlägt
         console.log('Backend-Sync fehlgeschlagen, verwende lokale Daten');
       } else {
         console.log('Benutzer ist nicht eingeloggt - verwende nur lokale Daten');
@@ -435,7 +439,6 @@ export class SyncManager {
     }
   }
 
-  // Hilfsfunktion für Offline-Synchronisation
   async handleOfflineChanges(userId) {
     try {
       console.log('Überprüfe Offline-Änderungen für User:', userId);
@@ -450,7 +453,6 @@ export class SyncManager {
         return { success: false, error: 'Kein Token verfügbar' };
       }
 
-      // Versuche Synchronisation
       const syncResult = await this.syncWithBackend(userId);
       return syncResult;
     } catch (error) {
@@ -459,7 +461,6 @@ export class SyncManager {
     }
   }
 
-  // Hilfsfunktion um zu prüfen, ob Benutzer eingeloggt ist
   async isUserLoggedIn() {
     try {
       const user = await this.getCurrentUser();
@@ -469,6 +470,157 @@ export class SyncManager {
     } catch (error) {
       console.error('Fehler beim Überprüfen des Login-Status:', error);
       return false;
+    }
+  }
+  async updateLocalReminder(userId, identifier, updatedData) {
+    try {
+      const localReminders = await this.getLocalReminders(userId);
+      let index = -1;
+
+      if (typeof identifier === 'string' && identifier.startsWith('local_')) {
+        index = localReminders.findIndex(r => r.localId === identifier);
+      } else if (!isNaN(parseInt(identifier))) {
+        const numericId = parseInt(identifier);
+        index = localReminders.findIndex(r =>
+          (r.serverId && parseInt(r.serverId) === numericId) ||
+          (r.id && parseInt(r.id) === numericId) ||
+          r.localId === identifier
+        );
+
+        if (index === -1 && numericId >= 0 && numericId < localReminders.length) {
+          index = numericId;
+        }
+      } else {
+        index = localReminders.findIndex(r =>
+          r.localId === identifier ||
+          r.serverId === identifier ||
+          r.id === identifier
+        );
+      }
+
+      if (index === -1 || index >= localReminders.length) {
+        console.error('Reminder nicht gefunden. Identifier:', identifier);
+        console.error('Verfügbare Reminders:', localReminders.map(r => ({
+          title: r.title,
+          localId: r.localId,
+          serverId: r.serverId,
+          id: r.id
+        })));
+        throw new Error('Reminder nicht gefunden');
+      }
+
+      const currentTime = new Date().toISOString();
+      localReminders[index] = {
+        ...localReminders[index],
+        ...updatedData,
+        updated_at: currentTime,
+        synced: false
+      };
+
+      await this.saveLocalReminders(userId, localReminders);
+      console.log('Reminder lokal aktualisiert:', localReminders[index].localId || localReminders[index].title);
+
+      return localReminders[index];
+    } catch (error) {
+      console.error('Fehler beim lokalen Update des Reminders:', error);
+      throw error;
+    }
+  }
+
+  async deleteLocalReminder(userId, identifier) {
+    try {
+      const localReminders = await this.getLocalReminders(userId);
+      let index = -1;
+
+      if (typeof identifier === 'string' && identifier.startsWith('local_')) {
+        index = localReminders.findIndex(r => r.localId === identifier);
+      } else if (!isNaN(parseInt(identifier))) {
+        const numericId = parseInt(identifier);
+        index = localReminders.findIndex(r =>
+          (r.serverId && parseInt(r.serverId) === numericId) ||
+          (r.id && parseInt(r.id) === numericId) ||
+          r.localId === identifier
+        );
+
+        if (index === -1 && numericId >= 0 && numericId < localReminders.length) {
+          index = numericId;
+        }
+      } else {
+        index = localReminders.findIndex(r =>
+          r.localId === identifier ||
+          r.serverId === identifier ||
+          r.id === identifier
+        );
+      }
+
+      if (index === -1 || index >= localReminders.length) {
+        console.error('Reminder zum Löschen nicht gefunden. Identifier:', identifier);
+        console.error('Verfügbare Reminders:', localReminders.map(r => ({
+          title: r.title,
+          localId: r.localId,
+          serverId: r.serverId,
+          id: r.id
+        })));
+        throw new Error('Reminder nicht gefunden');
+      }
+
+      const deletedReminder = localReminders[index];
+      localReminders.splice(index, 1);
+
+      await this.saveLocalReminders(userId, localReminders);
+      console.log('Reminder lokal gelöscht:', deletedReminder.localId || deletedReminder.title);
+
+      return localReminders;
+    } catch (error) {
+      console.error('Fehler beim lokalen Löschen des Reminders:', error);
+      throw error;
+    }
+  }
+
+  async mergeServerAndLocalData(userId, serverReminders) {
+    try {
+      const localReminders = await this.getLocalReminders(userId);
+      const mergedReminders = [];
+
+      for (const serverReminder of serverReminders) {
+        let localReminder = localReminders.find(lr =>
+          lr.title === serverReminder.title ||
+          (lr.serverId && lr.serverId === serverReminder.id) ||
+          (lr.id && lr.id === serverReminder.id)
+        );
+
+        if (localReminder) {
+          mergedReminders.push({
+            ...serverReminder,
+            localId: localReminder.localId,
+            serverId: serverReminder.id,
+            synced: true
+          });
+        } else {
+          mergedReminders.push({
+            ...serverReminder,
+            localId: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            serverId: serverReminder.id,
+            synced: true
+          });
+        }
+      }
+
+      const localOnlyReminders = localReminders.filter(lr =>
+        !serverReminders.find(sr =>
+          sr.title === lr.title ||
+          sr.id === lr.serverId ||
+          sr.id === lr.id
+        )
+      );
+
+      mergedReminders.push(...localOnlyReminders);
+
+      console.log('Merged Reminders:', mergedReminders.length);
+      return mergedReminders;
+    } catch (error) {
+      console.error('Fehler beim Mergen der Daten:', error);
+      return serverReminders;
     }
   }
 }

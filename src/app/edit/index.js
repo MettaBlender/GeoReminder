@@ -53,54 +53,76 @@ const EditReminder = () => {
         }
 
         const { default: SyncManager } = await import('@/utils/syncManager');
-        const result = await SyncManager.getAllReminders(userId);
+        const reminders = await SyncManager.getLocalReminders(userId);
 
-        if (result.success) {
-          const reminders = result.data || [];
-          console.log('Alle Reminders:', reminders);
-          console.log('Gesuchte ID:', id);
+        console.log('Lokale Reminders:', reminders);
+        console.log('Gesuchte ID:', id);
 
-          // Suche den Reminder über lokale ID, Server-ID oder Index
-          let reminder = null;
+        let reminder = null;
 
-          if (typeof id === 'string' && id.startsWith('local_')) {
-            // Suche nach lokaler ID
-            reminder = reminders.find(r => r.localId === id);
-          } else if (!isNaN(parseInt(id))) {
-            // Legacy: Behandle als Array-Index
-            const index = parseInt(id);
-            if (index >= 0 && index < reminders.length) {
-              reminder = reminders[index];
-            }
-          } else {
-            // Suche nach Server-ID oder Titel
-            reminder = reminders.find(r =>
-              r.serverId === id ||
-              r.id === id ||
-              r.title === decodeURIComponent(id)
-            );
-          }
+        console.log('Suche Reminder mit ID:', id);
+        console.log('Verfügbare Reminders:', reminders.map(r => ({
+          title: r.title,
+          localId: r.localId,
+          serverId: r.serverId,
+          id: r.id
+        })));
 
-          if (reminder) {
-            console.log('Gefundener Reminder:', reminder);
-            setData({
-              title: reminder.title || '',
-              content: reminder.content || '',
-              radius: reminder.radius?.toString() || '',
-              latitude: reminder.latitude?.toString() || '0.0',
-              longitude: reminder.longitude?.toString() || '0.0',
-            });
-          } else {
-            console.error('Erinnerung nicht gefunden für ID:', id);
-            router.back();
+        if (typeof id === 'string' && id.startsWith('local_')) {
+          reminder = reminders.find(r => r.localId === id);
+          console.log('Suche nach localId:', id, 'Gefunden:', !!reminder);
+        } else if (!isNaN(parseInt(id))) {
+          const numericId = parseInt(id);
+          reminder = reminders.find(r =>
+            (r.serverId && parseInt(r.serverId) === numericId) ||
+            (r.id && parseInt(r.id) === numericId)
+          );
+          console.log('Suche nach numerischer ID:', numericId, 'Gefunden:', !!reminder);
+
+          if (!reminder && numericId >= 0 && numericId < reminders.length) {
+            reminder = reminders[numericId];
+            console.log('Fallback auf Array-Index:', numericId, 'Gefunden:', !!reminder);
           }
         } else {
-          console.error('Fehler beim Laden der Reminders:', result.error);
-          router.back();
+          reminder = reminders.find(r =>
+            r.serverId === id ||
+            r.id === id ||
+            r.localId === id ||
+            r.title === decodeURIComponent(id)
+          );
+          console.log('Suche nach beliebigem Identifier:', id, 'Gefunden:', !!reminder);
+        }
+
+        console.log('Gefundener Reminder:', reminder);
+        console.log('Alle verfügbaren Reminders für Debug:', reminders.map(r => ({
+          title: r.title,
+          localId: r.localId,
+          serverId: r.serverId,
+          id: r.id
+        })));
+
+        if (reminder) {
+          console.log('Gefundener Reminder:', reminder);
+          setData({
+            title: reminder.title || '',
+            content: reminder.content || '',
+            radius: reminder.radius?.toString() || '',
+            latitude: reminder.latitude?.toString() || '0.0',
+            longitude: reminder.longitude?.toString() || '0.0',
+          });
+        } else {
+          console.error('Erinnerung nicht gefunden für ID:', id);
+          console.error('Verfügbare Reminders:', reminders.map(r => ({
+            title: r.title,
+            localId: r.localId,
+            serverId: r.serverId,
+            id: r.id
+          })));
+          setErrorMsg(`Erinnerung mit ID "${id}" nicht gefunden.`);
         }
       } catch (error) {
         console.error('Error loading reminder:', error);
-        router.back();
+        setErrorMsg(`Fehler beim Laden der Erinnerung: ${error.message}`);
       } finally {
         setIsDataLoading(false);
       }
@@ -221,18 +243,14 @@ const EditReminder = () => {
         content: data.content.trim(),
         radius: parseFloat(data.radius),
         latitude: parseFloat(data.latitude),
-        longitude: parseFloat(data.longitude)
+        longitude: parseFloat(data.longitude),
+        updated_at: new Date().toISOString(),
+        synced: false
       };
 
-      // Verwende SyncManager für das Aktualisieren
       const { default: SyncManager } = await import('@/utils/syncManager');
-      const result = await SyncManager.updateReminder(userId, id, updatedData);
-
-      if (result.success) {
-        router.back();
-      } else {
-        Alert.alert('Fehler', result.error || 'Ein Fehler ist beim Speichern der Erinnerung aufgetreten.');
-      }
+      await SyncManager.updateLocalReminder(userId, id, updatedData);
+      router.back();
     } catch (error) {
       console.error('Error saving reminder:', error);
       Alert.alert('Fehler', 'Ein Fehler ist beim Speichern der Erinnerung aufgetreten.');
@@ -263,25 +281,9 @@ const EditReminder = () => {
                 }
               }
 
-              // Erstelle Reminder-Objekt mit aktuellen Daten für Identifikation
-              const reminderToDelete = {
-                localId: id.startsWith('local_') ? id : null,
-                serverId: !id.startsWith('local_') && !isNaN(parseInt(id)) ? id : null,
-                title: data.title,
-                content: data.content,
-                latitude: parseFloat(data.latitude),
-                longitude: parseFloat(data.longitude)
-              };
-
-              // Verwende SyncManager für das Löschen
               const { default: SyncManager } = await import('@/utils/syncManager');
-              const result = await SyncManager.deleteReminder(userId, reminderToDelete);
-
-              if (result.success) {
-                router.back();
-              } else {
-                Alert.alert('Fehler', result.error || 'Ein Fehler ist beim Löschen der Erinnerung aufgetreten.');
-              }
+              await SyncManager.deleteLocalReminder(userId, id);
+              router.back();
             } catch (error) {
               console.error('Error deleting reminder:', error);
               Alert.alert('Fehler', 'Ein Fehler ist beim Löschen der Erinnerung aufgetreten. Bitte versuchen Sie es erneut.');
@@ -347,8 +349,16 @@ const EditReminder = () => {
             {isDataLoading ? (
               <LoadingView message="Daten werden geladen..." />
             ) : errorMsg ? (
-              <Text className="text-red-400 text-base text-center mt-5">{errorMsg}</Text>
-          ) : (
+              <View className="flex-1 justify-center items-center p-4">
+                <Text className="text-red-400 text-base text-center mb-4">{errorMsg}</Text>
+                <TouchableOpacity
+                  onPress={() => router.back()}
+                  className="bg-gray-600 px-4 py-2 rounded-md"
+                >
+                  <Text className="text-white">Zurück</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
             <>
               <SearchBar
                 searchQuery={searchQuery}

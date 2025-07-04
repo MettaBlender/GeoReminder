@@ -20,7 +20,7 @@ export default function Page() {
     setIsLoading(true);
     try {
       const user = await getCurrentUser();
-      let userId = 'unsigned'; // Standard-Fallback
+      let userId = 'unsigned';
 
       if (user) {
         try {
@@ -36,10 +36,9 @@ export default function Page() {
 
       if (currentUserId !== userId) {
         setCurrentUserId(userId);
-        setReminderData([]); // Leere Liste während des Ladens
+        setReminderData([]);
       }
 
-      // Verwende SyncManager für einheitliche Datenverarbeitung
       const result = await SyncManager.getAllReminders(userId);
 
       if (result.success) {
@@ -69,7 +68,16 @@ export default function Page() {
   );
 
   const onPress = (reminder) => {
-    const identifier = reminder.localId || reminder.id || reminder.title;
+    let identifier;
+
+    if (reminder.localId) {
+      identifier = reminder.localId;
+    } else if (reminder.id) {
+      identifier = reminder.id;
+    } else {
+      identifier = reminder.title;
+    }
+
     console.log('Navigiere zu Edit mit Identifier:', identifier);
     console.log('Reminder:', reminder);
     router.push(`/edit?id=${encodeURIComponent(identifier)}`);
@@ -80,7 +88,7 @@ export default function Page() {
       console.log('Lösche Item:', itemToDelete, 'an Index:', index);
 
       const user = await getCurrentUser();
-      let userId = 'unsigned'; // Standard-Fallback
+      let userId = 'unsigned';
 
       if (user) {
         try {
@@ -94,15 +102,9 @@ export default function Page() {
 
       console.log('Lösche Reminder für User:', userId);
 
-      // Verwende SyncManager für das Löschen
-      const result = await SyncManager.deleteReminder(userId, itemToDelete);
-
-      if (result.success) {
-        setReminderData(result.data || []);
-        console.log('Item erfolgreich gelöscht');
-      } else {
-        console.error('Fehler beim Löschen:', result.error);
-      }
+      const updatedReminders = await SyncManager.deleteLocalReminder(userId, itemToDelete.localId || itemToDelete.id);
+      setReminderData(updatedReminders);
+      console.log('Item lokal gelöscht');
     } catch (error) {
       console.error('Fehler beim Löschen der Erinnerung:', error);
     }

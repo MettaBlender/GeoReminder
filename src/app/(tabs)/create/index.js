@@ -119,7 +119,7 @@ const Index = () => {
 
     try {
       const user = await getCurrentUser();
-      let userId = 'unsigned'; // Standard-Fallback
+      let userId = 'unsigned';
 
       if (user) {
         try {
@@ -133,11 +133,10 @@ const Index = () => {
 
       console.log('Erstelle Reminder für User:', userId);
 
-      // Generiere lokale ID
       const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       const newReminder = {
-        localId: localId, // Lokale ID für Identifikation
+        localId: localId,
         title: title.trim(),
         content: content.trim(),
         radius: parseFloat(radius),
@@ -146,31 +145,23 @@ const Index = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         isDeleted: false,
-        synced: false // Markierung für Sync-Status
+        synced: false
       };
 
       console.log('Neuer Reminder:', newReminder);
 
-      // Verwende SyncManager für das Erstellen
-      const result = await SyncManager.createReminder(userId, newReminder);
+      await SyncManager.createLocalReminder(userId, newReminder);
+      console.log('Reminder lokal erstellt');
 
-      if (result.success) {
-        console.log('Reminder erfolgreich erstellt');
+      setData({
+        title: '',
+        content: '',
+        radius: '',
+        latitude: '0.0',
+        longitude: '0.0',
+      });
 
-        // Leere die Input-Felder
-        setData({
-          title: '',
-          content: '',
-          radius: '',
-          latitude: '0.0',
-          longitude: '0.0',
-        });
-
-        // Navigiere zurück zur Home-Seite ohne Alert
-        router.push('/(tabs)/home');
-      } else {
-        Alert.alert('Fehler', result.error || 'Fehler beim Erstellen des Reminders');
-      }
+      router.push('/(tabs)/home');
     } catch (error) {
       console.error('Fehler beim Erstellen des Reminders:', error);
       Alert.alert('Fehler', 'Ein unerwarteter Fehler ist aufgetreten.');

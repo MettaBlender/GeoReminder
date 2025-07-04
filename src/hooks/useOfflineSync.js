@@ -12,7 +12,6 @@ export const useOfflineSync = () => {
           const user = await SyncManager.getCurrentUser();
           const token = await SyncManager.getAuthToken();
 
-          // Synchronisation nur für eingeloggte Benutzer
           if (user && user.id !== 'unsigned' && token) {
             console.log('Benutzer ist eingeloggt - starte Offline-Synchronisation');
             await SyncManager.handleOfflineChanges(user.id);
@@ -27,7 +26,6 @@ export const useOfflineSync = () => {
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
-    // Initiale Synchronisation beim ersten Start
     handleAppStateChange('active');
 
     return () => {

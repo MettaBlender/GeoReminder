@@ -1,6 +1,3 @@
-// Debug-Script zum Testen der Reminder-Erstellung
-// Führe dieses Script aus, um zu prüfen, ob die Daten korrekt übertragen werden
-
 const testReminder = {
   title: "Test Reminder " + Date.now(),
   content: "Test Content",
@@ -12,7 +9,6 @@ const testReminder = {
 console.log('=== REMINDER DEBUG TEST ===');
 console.log('Test Reminder:', testReminder);
 
-// Teste das Backend direkt
 async function testBackend() {
   console.log('\n=== BACKEND TEST ===');
 
@@ -22,8 +18,8 @@ async function testBackend() {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      username: 'testuser', // Ersetze mit deinem Benutzernamen
-      password: 'testpass'  // Ersetze mit deinem Passwort
+      username: 'testuser',
+      password: 'testpass'
     }),
   });
 
@@ -37,7 +33,6 @@ async function testBackend() {
 
   const token = loginData.token;
 
-  // Teste Reminder-Erstellung
   const createResponse = await fetch('https://geo-reminder-backend.vercel.app/api/reminders', {
     method: 'POST',
     headers: {
@@ -57,7 +52,6 @@ async function testBackend() {
   const createData = await createResponse.json();
   console.log('Reminder-Erstellung erfolgreich:', createData);
 
-  // Teste Reminder-Abruf
   const getResponse = await fetch('https://geo-reminder-backend.vercel.app/api/reminders', {
     method: 'GET',
     headers: {
@@ -74,18 +68,14 @@ async function testBackend() {
   console.log('Reminder-Abruf erfolgreich:', getData);
 }
 
-// Teste den SyncManager
 async function testSyncManager() {
   console.log('\n=== SYNC MANAGER TEST ===');
 
-  // Importiere den SyncManager
   const { default: SyncManager } = await import('./src/utils/syncManager.js');
 
-  // Teste createReminder
   const result = await SyncManager.createReminder('testuser', testReminder);
   console.log('SyncManager createReminder Ergebnis:', result);
 }
 
-// Führe Tests aus
 testBackend().catch(console.error);
 testSyncManager().catch(console.error);

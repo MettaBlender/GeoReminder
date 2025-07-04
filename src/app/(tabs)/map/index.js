@@ -72,7 +72,6 @@ const Map = () => {
         userId = userData.id || userData.username;
       }
 
-      // Verwende SyncManager für konsistente Datenverarbeitung
       const { default: SyncManager } = await import('@/utils/syncManager');
       const result = await SyncManager.getLocalReminders(userId);
 
