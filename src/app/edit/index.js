@@ -231,7 +231,7 @@ const EditReminder = () => {
       if (user) {
         try {
           const userData = JSON.parse(user);
-          userId = userData.id || userData.username || 'unsigned';
+          userId = userData.id || 'unsigned';
         } catch (parseError) {
           console.warn('Fehler beim Parsen der Benutzerdaten, verwende unsigned:', parseError);
           userId = 'unsigned';
@@ -274,7 +274,7 @@ const EditReminder = () => {
               if (user) {
                 try {
                   const userData = JSON.parse(user);
-                  userId = userData.id || userData.username || 'unsigned';
+                  userId = userData.id || 'unsigned';
                 } catch (parseError) {
                   console.warn('Fehler beim Parsen der Benutzerdaten, verwende unsigned:', parseError);
                   userId = 'unsigned';
