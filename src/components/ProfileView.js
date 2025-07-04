@@ -25,12 +25,6 @@ const ProfileView = ({ currentUser, onLogout }) => {
                 <Text style={styles.userInfoLabel}>Passwort:</Text>
                 <Text style={styles.userInfoValue}>••••••••</Text>
               </View>
-              <View style={styles.userInfoRow}>
-                <Text style={styles.userInfoLabel}>Mitglied seit:</Text>
-                <Text style={styles.userInfoValue}>
-                  {new Date(currentUser.createdAt).toLocaleDateString('de-DE')}
-                </Text>
-              </View>
             </View>
 
             <View style={styles.buttonContainer}>
