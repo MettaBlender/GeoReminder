@@ -6,132 +6,52 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
+import SyncManager from '@/utils/syncManager';
 
 export default function Page() {
   const router = useRouter();
-
-  const {getItem, setItem} = useAsyncStorage('reminder');
-  const { getItem: getToken } = useAsyncStorage('authToken');
   const { getItem: getCurrentUser } = useAsyncStorage('currentUser');
 
-  const [reminderData, setReminderData] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [currentUserId, setCurrentUserId] = useState(null)
-
-  const API_BASE_URL = 'https://geo-reminder-backend.vercel.app';
-
-
-  const syncWithBackend = async (userId = null) => {
-    try {
-      const token = await getToken();
-      const activeUserId = userId || currentUserId;
-
-      if (!token || !activeUserId) {
-        console.log('Kein Token oder User ID gefunden, Backend-Sync übersprungen');
-        return;
-      }
-
-      const localData = await getItem();
-      const allLocalReminders = localData ? JSON.parse(localData) : {};
-      const userReminders = allLocalReminders[activeUserId] || [];
-
-      for (const reminder of userReminders) {
-        try {
-          await fetch(`${API_BASE_URL}/api/reminders`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              title: reminder.title,
-              content: reminder.content,
-              latitude: reminder.latitude,
-              longitude: reminder.longitude,
-              radius: reminder.radius,
-            }),
-          });
-        } catch (error) {
-          console.error('Fehler beim Backup einer Erinnerung:', error);
-        }
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/reminders`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        const backendReminders = result.data || [];
-
-        const updatedLocalData = { ...allLocalReminders };
-        updatedLocalData[activeUserId] = backendReminders;
-        await setItem(JSON.stringify(updatedLocalData));
-        setReminderData(backendReminders);
-        console.log('Lokale Daten mit Backend-Daten überschrieben für angemeldeten Benutzer');
-      } else {
-        console.error('Fehler beim Abrufen der Backend-Daten:', response.status);
-      }
-    } catch (error) {
-      console.error('Fehler bei Backend-Synchronisation:', error);
-    }
-  };
+  const [reminderData, setReminderData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const getData = async () => {
     setIsLoading(true);
     try {
       const user = await getCurrentUser();
+      let userId = 'unsigned'; // Standard-Fallback
 
-      const value = await getItem();
-      const rawData = value ? JSON.parse(value) : {};
-
-      console.log('Raw storage data:', rawData);
-
-      let allReminders = {};
-      if (Array.isArray(rawData)) {
-        console.log('Migriere alte Datenstruktur...');
-        allReminders['unsigned'] = rawData;
-        await setItem(JSON.stringify(allReminders));
-        console.log('Migration abgeschlossen:', allReminders);
-      } else {
-        allReminders = rawData;
+      if (user) {
+        try {
+          const userData = JSON.parse(user);
+          userId = userData.id || userData.username || 'unsigned';
+        } catch (parseError) {
+          console.warn('Fehler beim Parsen der Benutzerdaten, verwende unsigned:', parseError);
+          userId = 'unsigned';
+        }
       }
 
-      if (!user) {
-        console.log('Kein angemeldeter Benutzer gefunden - zeige unsignierte Reminders');
-        const unsignedReminders = allReminders['unsigned'] || [];
-        console.log('Unsigned reminders:', unsignedReminders);
-        setReminderData(unsignedReminders);
-        setCurrentUserId(null);
-        setIsLoading(false);
-        return;
-      }
-
-      const userData = JSON.parse(user);
-      const userId = userData.id || userData.username;
+      console.log('Lade Daten für User:', userId);
 
       if (currentUserId !== userId) {
         setCurrentUserId(userId);
+        setReminderData([]); // Leere Liste während des Ladens
+      }
 
+      // Verwende SyncManager für einheitliche Datenverarbeitung
+      const result = await SyncManager.getAllReminders(userId);
+
+      if (result.success) {
+        setReminderData(result.data || []);
+        console.log('Daten erfolgreich geladen:', (result.data || []).length, 'Reminders');
+      } else {
+        console.error('Fehler beim Laden der Daten:', result.error);
         setReminderData([]);
-
-        const userReminders = allReminders[userId] || [];
-
-        console.log('reminderData für User', userId, ':', userReminders);
-        setReminderData(userReminders);
-
-        await syncWithBackend(userId);
-      } else if (currentUserId) {
-        const userReminders = allReminders[userId] || [];
-        console.log('Aktualisiere Daten für bestehenden User', userId, ':', userReminders);
-        setReminderData(userReminders);
-        await syncWithBackend(userId);
       }
     } catch (error) {
-      console.error("Error loading items:", error);
+      console.error("Fehler beim Laden der Items:", error);
+      setReminderData([]);
     } finally {
       setIsLoading(false);
     }
@@ -148,9 +68,11 @@ export default function Page() {
     }, [])
   );
 
-  const onPress = (index) => {
-    console.log('Navigating to edit with id:', index);
-    router.push(`/edit?id=${index.toString()}`);
+  const onPress = (reminder) => {
+    const identifier = reminder.localId || reminder.id || reminder.title;
+    console.log('Navigiere zu Edit mit Identifier:', identifier);
+    console.log('Reminder:', reminder);
+    router.push(`/edit?id=${encodeURIComponent(identifier)}`);
   };
 
   const handleDeleteReminder = async (itemToDelete, index) => {
@@ -158,54 +80,28 @@ export default function Page() {
       console.log('Lösche Item:', itemToDelete, 'an Index:', index);
 
       const user = await getCurrentUser();
-      const value = await getItem();
-      const allReminders = value ? JSON.parse(value) : {};
+      let userId = 'unsigned'; // Standard-Fallback
 
-      let userId = 'unsigned';
       if (user) {
-        const userData = JSON.parse(user);
-        userId = userData.id || userData.username;
-      }
-
-      const userReminders = allReminders[userId] || [];
-
-      const itemIndex = userReminders.findIndex(reminder =>
-        reminder.title === itemToDelete.title &&
-        reminder.content === itemToDelete.content &&
-        reminder.latitude === itemToDelete.latitude &&
-        reminder.longitude === itemToDelete.longitude
-      );
-
-      if (itemIndex === -1) {
-        console.error('Item nicht gefunden für Löschung');
-        return;
-      }
-
-      console.log('Gefundener Index für Löschung:', itemIndex);
-
-      const removedItem = userReminders.splice(itemIndex, 1)[0];
-      console.log('Gelöschtes Item:', removedItem);
-
-      allReminders[userId] = userReminders;
-      await setItem(JSON.stringify(allReminders));
-
-      setReminderData([...userReminders]);
-
-      if (currentUserId && removedItem?.id) {
         try {
-          const token = await getToken();
-          if (token) {
-            await fetch(`${API_BASE_URL}/api/reminders/${removedItem.id}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-              },
-            });
-            console.log('Item vom Backend gelöscht');
-          }
-        } catch (error) {
-          console.error('Fehler beim Löschen vom Backend:', error);
+          const userData = JSON.parse(user);
+          userId = userData.id || userData.username || 'unsigned';
+        } catch (parseError) {
+          console.warn('Fehler beim Parsen der Benutzerdaten, verwende unsigned:', parseError);
+          userId = 'unsigned';
         }
+      }
+
+      console.log('Lösche Reminder für User:', userId);
+
+      // Verwende SyncManager für das Löschen
+      const result = await SyncManager.deleteReminder(userId, itemToDelete);
+
+      if (result.success) {
+        setReminderData(result.data || []);
+        console.log('Item erfolgreich gelöscht');
+      } else {
+        console.error('Fehler beim Löschen:', result.error);
       }
     } catch (error) {
       console.error('Fehler beim Löschen der Erinnerung:', error);
@@ -221,26 +117,25 @@ export default function Page() {
         renderItem={({ item, index }) => (
           <ReminderListItem
             item={item}
-            onPress={() => onPress(index)}
+            onPress={() => onPress(item)}
             onDelete={() => handleDeleteReminder(item, index)}
           />
         )}
-        keyExtractor={(item, index) => `${item.title}-${item.latitude}-${item.longitude}-${index}`}
+        keyExtractor={(item, index) => item.localId || `${item.title}-${item.latitude}-${item.longitude}-${index}`}
         contentContainerClassName="px-2.5"
         refreshControl={<RefreshControl
           refreshing={isLoading}
           onRefresh={() => getData()}
           colors={["#33a5f6"]}
           tintColor={"#fff"}
-        />
-      }
-      ListEmptyComponent={() => (
-        !isLoading && (
-          <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 20 }}>
-            <Text style={{ color: "white" }}>Noch gibt es Keine Erinnerungen...</Text>
-          </View>
-        )
-      )}
+        />}
+        ListEmptyComponent={() => (
+          !isLoading && (
+            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 20 }}>
+              <Text style={{ color: "white" }}>Noch gibt es keine Erinnerungen...</Text>
+            </View>
+          )
+        )}
       />
     </View>
   );

@@ -46,7 +46,7 @@ const ProfileView = ({ currentUser, onLogout }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#000',
   },
   scrollContainer: {
     flexGrow: 1,

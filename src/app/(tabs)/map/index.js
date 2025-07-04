@@ -72,15 +72,11 @@ const Map = () => {
         userId = userData.id || userData.username;
       }
 
-      const value = await getItem();
-      const allReminders = value ? JSON.parse(value) : {};
-      let userReminders = allReminders[userId] || [];
+      // Verwende SyncManager für konsistente Datenverarbeitung
+      const { default: SyncManager } = await import('@/utils/syncManager');
+      const result = await SyncManager.getLocalReminders(userId);
 
-      if (!Array.isArray(userReminders)) {
-        userReminders = [];
-      }
-
-      const numericData = userReminders.map(item => ({
+      const numericData = result.map(item => ({
         ...item,
         radius: parseFloat(item.radius),
         latitude: parseFloat(item.latitude),

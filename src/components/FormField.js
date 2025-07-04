@@ -16,7 +16,7 @@ const FormField = ({
 }) => {
   const getInputClass = () => {
     let baseClass = 'bg-white rounded-lg p-3 border text-black';
-    if (hasError) return `${baseClass} border-red-500 border-2`;
+    if (hasError) return `${baseClass} border-red-500 border-4`;
     if (isRequired) return `${baseClass} border-orange-400`;
     return `${baseClass} border-gray-300`;
   };

@@ -10,6 +10,7 @@ import CoordinateInput from '../../../components/CoordinateInput';
 import SubmitButton from '../../../components/SubmitButton';
 import LoadingView from '../../../components/LoadingView';
 import { router } from 'expo-router';
+import SyncManager from '../../../utils/syncManager';
 
 const Index = () => {
   const [location, setLocation] = useState(null);
@@ -106,60 +107,74 @@ const Index = () => {
     setSearchResults([]);
   };
 
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
   const handleSubmit = async () => {
-    if (!title.trim() || !content.trim() || !radius.trim() || !latitude || !longitude) {
+    if (!areAllFieldsValid()) {
       Alert.alert('Fehler', 'Bitte füllen Sie alle Felder aus.');
       return;
     }
 
-    if (!isPositiveNumber(radius)) {
-      Alert.alert('Fehler', 'Der Radius muss eine positive Zahl sein.');
-      return;
-    }
-
-    if (latitude === '0.0' || longitude === '0.0') {
-      Alert.alert('Fehler', 'Bitte setzen Sie einen Pin auf der Karte oder geben Sie gültige Koordinaten ein.');
-      return;
-    }    try {
+    try {
       const user = await getCurrentUser();
-      let userId = 'unsigned';
+      let userId = 'unsigned'; // Standard-Fallback
 
       if (user) {
-        const userData = JSON.parse(user);
-        userId = userData.id || userData.username;
+        try {
+          const userData = JSON.parse(user);
+          userId = userData.id || userData.username || 'unsigned';
+        } catch (parseError) {
+          console.warn('Fehler beim Parsen der Benutzerdaten, verwende unsigned:', parseError);
+          userId = 'unsigned';
+        }
       }
 
-      const value = await getItem();
-      const allReminders = value ? JSON.parse(value) : {};
-      let userReminders = allReminders[userId];
+      console.log('Erstelle Reminder für User:', userId);
 
-      if (!Array.isArray(userReminders)) {
-        userReminders = [];
+      // Generiere lokale ID
+      const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      const newReminder = {
+        localId: localId, // Lokale ID für Identifikation
+        title: title.trim(),
+        content: content.trim(),
+        radius: parseFloat(radius),
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        isDeleted: false,
+        synced: false // Markierung für Sync-Status
+      };
+
+      console.log('Neuer Reminder:', newReminder);
+
+      // Verwende SyncManager für das Erstellen
+      const result = await SyncManager.createReminder(userId, newReminder);
+
+      if (result.success) {
+        console.log('Reminder erfolgreich erstellt');
+
+        // Leere die Input-Felder
+        setData({
+          title: '',
+          content: '',
+          radius: '',
+          latitude: '0.0',
+          longitude: '0.0',
+        });
+
+        // Navigiere zurück zur Home-Seite ohne Alert
+        router.push('/(tabs)/home');
+      } else {
+        Alert.alert('Fehler', result.error || 'Fehler beim Erstellen des Reminders');
       }
-
-      userReminders.push(data);
-      allReminders[userId] = userReminders;
-
-      await setItem(JSON.stringify(allReminders));
-
-      setData({
-        title: '',
-        content: '',
-        radius: '',
-        latitude: '0.0',
-        longitude: '0.0',
-      });
-      setSearchQuery('');
-      router.push('/home');
     } catch (error) {
-      console.error('Error saving reminder:', error);
-      Alert.alert('Fehler', 'Ein Fehler ist beim Speichern der Erinnerung aufgetreten.');
+      console.error('Fehler beim Erstellen des Reminders:', error);
+      Alert.alert('Fehler', 'Ein unerwarteter Fehler ist aufgetreten.');
     }
-  };
-
-  const dismissKeyboard = () => {
-    Keyboard.dismiss();
-    setSearchResults([]);
   };
 
   useEffect(() => {
