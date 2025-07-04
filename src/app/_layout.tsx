@@ -2,10 +2,14 @@ import Header from "@/components/Header";
 import "../global.css";
 import { Stack, useRouter } from "expo-router";
 import { TouchableOpacity, Text, View, Dimensions, Platform } from "react-native";
+import useOfflineSync from "@/hooks/useOfflineSync";
 
 export default function Layout() {
   const router = useRouter();
   const screenWidth = Dimensions.get('window').width;
+
+  // Initialisiere Offline-Synchronisation
+  useOfflineSync();
 
   return (
     <Stack

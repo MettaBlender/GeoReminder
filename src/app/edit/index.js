@@ -13,6 +13,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Trash from '@/components/Trash';
 import SubmitButton from '@/components/SubmitButton';
+import SyncManager from '@/utils/syncManager';
 
 const EditReminder = () => {
   const router = useRouter();
@@ -42,30 +43,59 @@ const EditReminder = () => {
         let userId = 'unsigned';
 
         if (user) {
-          const userData = JSON.parse(user);
-          userId = userData.id || userData.username;
+          try {
+            const userData = JSON.parse(user);
+            userId = userData.id || userData.username || 'unsigned';
+          } catch (parseError) {
+            console.warn('Fehler beim Parsen der Benutzerdaten, verwende unsigned:', parseError);
+            userId = 'unsigned';
+          }
         }
 
-        const reminders = await getItem();
-        const allReminders = reminders ? JSON.parse(reminders) : {};
-        let userReminders = allReminders[userId];
+        const { default: SyncManager } = await import('@/utils/syncManager');
+        const result = await SyncManager.getAllReminders(userId);
 
-        if (!Array.isArray(userReminders)) {
-          userReminders = [];
-        }
+        if (result.success) {
+          const reminders = result.data || [];
+          console.log('Alle Reminders:', reminders);
+          console.log('Gesuchte ID:', id);
 
-        const reminder = userReminders[id];
+          // Suche den Reminder über lokale ID, Server-ID oder Index
+          let reminder = null;
 
-        if (reminder) {
-          setData({
-            title: reminder.title || '',
-            content: reminder.content || '',
-            radius: reminder.radius || '',
-            latitude: reminder.latitude || '0.0',
-            longitude: reminder.longitude || '0.0',
-          });
+          if (typeof id === 'string' && id.startsWith('local_')) {
+            // Suche nach lokaler ID
+            reminder = reminders.find(r => r.localId === id);
+          } else if (!isNaN(parseInt(id))) {
+            // Legacy: Behandle als Array-Index
+            const index = parseInt(id);
+            if (index >= 0 && index < reminders.length) {
+              reminder = reminders[index];
+            }
+          } else {
+            // Suche nach Server-ID oder Titel
+            reminder = reminders.find(r =>
+              r.serverId === id ||
+              r.id === id ||
+              r.title === decodeURIComponent(id)
+            );
+          }
+
+          if (reminder) {
+            console.log('Gefundener Reminder:', reminder);
+            setData({
+              title: reminder.title || '',
+              content: reminder.content || '',
+              radius: reminder.radius?.toString() || '',
+              latitude: reminder.latitude?.toString() || '0.0',
+              longitude: reminder.longitude?.toString() || '0.0',
+            });
+          } else {
+            console.error('Erinnerung nicht gefunden für ID:', id);
+            router.back();
+          }
         } else {
-          console.error('Erinnerung nicht gefunden:', id);
+          console.error('Fehler beim Laden der Reminders:', result.error);
           router.back();
         }
       } catch (error) {
@@ -177,23 +207,32 @@ const EditReminder = () => {
       let userId = 'unsigned';
 
       if (user) {
-        const userData = JSON.parse(user);
-        userId = userData.id || userData.username;
+        try {
+          const userData = JSON.parse(user);
+          userId = userData.id || userData.username || 'unsigned';
+        } catch (parseError) {
+          console.warn('Fehler beim Parsen der Benutzerdaten, verwende unsigned:', parseError);
+          userId = 'unsigned';
+        }
       }
 
-      const value = await getItem();
-      const allReminders = value ? JSON.parse(value) : {};
-      let userReminders = allReminders[userId];
+      const updatedData = {
+        title: data.title.trim(),
+        content: data.content.trim(),
+        radius: parseFloat(data.radius),
+        latitude: parseFloat(data.latitude),
+        longitude: parseFloat(data.longitude)
+      };
 
-      if (!Array.isArray(userReminders)) {
-        userReminders = [];
+      // Verwende SyncManager für das Aktualisieren
+      const { default: SyncManager } = await import('@/utils/syncManager');
+      const result = await SyncManager.updateReminder(userId, id, updatedData);
+
+      if (result.success) {
+        router.back();
+      } else {
+        Alert.alert('Fehler', result.error || 'Ein Fehler ist beim Speichern der Erinnerung aufgetreten.');
       }
-
-      userReminders[id] = data;
-      allReminders[userId] = userReminders;
-
-      await setItem(JSON.stringify(allReminders));
-      router.push('/home');
     } catch (error) {
       console.error('Error saving reminder:', error);
       Alert.alert('Fehler', 'Ein Fehler ist beim Speichern der Erinnerung aufgetreten.');
@@ -215,29 +254,34 @@ const EditReminder = () => {
               let userId = 'unsigned';
 
               if (user) {
-                const userData = JSON.parse(user);
-                userId = userData.id || userData.username;
+                try {
+                  const userData = JSON.parse(user);
+                  userId = userData.id || userData.username || 'unsigned';
+                } catch (parseError) {
+                  console.warn('Fehler beim Parsen der Benutzerdaten, verwende unsigned:', parseError);
+                  userId = 'unsigned';
+                }
               }
 
-              const reminders = await getItem();
-              const allReminders = reminders ? JSON.parse(reminders) : {};
-              let userReminders = allReminders[userId];
+              // Erstelle Reminder-Objekt mit aktuellen Daten für Identifikation
+              const reminderToDelete = {
+                localId: id.startsWith('local_') ? id : null,
+                serverId: !id.startsWith('local_') && !isNaN(parseInt(id)) ? id : null,
+                title: data.title,
+                content: data.content,
+                latitude: parseFloat(data.latitude),
+                longitude: parseFloat(data.longitude)
+              };
 
-              if (!Array.isArray(userReminders)) {
-                userReminders = [];
+              // Verwende SyncManager für das Löschen
+              const { default: SyncManager } = await import('@/utils/syncManager');
+              const result = await SyncManager.deleteReminder(userId, reminderToDelete);
+
+              if (result.success) {
+                router.back();
+              } else {
+                Alert.alert('Fehler', result.error || 'Ein Fehler ist beim Löschen der Erinnerung aufgetreten.');
               }
-
-              if (!userReminders[id]) {
-                Alert.alert('Fehler', 'Die Erinnerung wurde nicht gefunden.');
-                router.push('/home');
-                return;
-              }
-
-              userReminders.splice(id, 1);
-              allReminders[userId] = userReminders;
-
-              await setItem(JSON.stringify(allReminders));
-              router.push('/home');
             } catch (error) {
               console.error('Error deleting reminder:', error);
               Alert.alert('Fehler', 'Ein Fehler ist beim Löschen der Erinnerung aufgetreten. Bitte versuchen Sie es erneut.');
@@ -381,7 +425,7 @@ const EditReminder = () => {
                   disabled={!areAllFieldsValid()}
                   width="80%"
                 >
-                  {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
+                  {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Speichern'}
                 </SubmitButton>
                 <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
                   <Trash/>
