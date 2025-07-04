@@ -157,6 +157,70 @@ export default function Page() {
     router.push(`/edit?id=${index.toString()}`);
   };
 
+  const handleDeleteReminder = async (itemToDelete, index) => {
+    try {
+      console.log('Lösche Item:', itemToDelete, 'an Index:', index);
+
+      const user = await getCurrentUser();
+      const value = await getItem();
+      const allReminders = value ? JSON.parse(value) : {};
+
+      let userId = 'unsigned';
+      if (user) {
+        const userData = JSON.parse(user);
+        userId = userData.id || userData.username;
+      }
+
+      const userReminders = allReminders[userId] || [];
+
+      // Finde das Item anhand der Eigenschaften (da Index sich ändern kann)
+      const itemIndex = userReminders.findIndex(reminder =>
+        reminder.title === itemToDelete.title &&
+        reminder.content === itemToDelete.content &&
+        reminder.latitude === itemToDelete.latitude &&
+        reminder.longitude === itemToDelete.longitude
+      );
+
+      if (itemIndex === -1) {
+        console.error('Item nicht gefunden für Löschung');
+        return;
+      }
+
+      console.log('Gefundener Index für Löschung:', itemIndex);
+
+      // Item aus dem Array entfernen
+      const removedItem = userReminders.splice(itemIndex, 1)[0];
+      console.log('Gelöschtes Item:', removedItem);
+
+      // Aktualisierte Daten speichern
+      allReminders[userId] = userReminders;
+      await setItem(JSON.stringify(allReminders));
+
+      // UI aktualisieren
+      setReminderData([...userReminders]);
+
+      // Optional: Auch vom Backend löschen, wenn eingeloggt
+      if (currentUserId && removedItem?.id) {
+        try {
+          const token = await getToken();
+          if (token) {
+            await fetch(`${API_BASE_URL}/api/reminders/${removedItem.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            });
+            console.log('Item vom Backend gelöscht');
+          }
+        } catch (error) {
+          console.error('Fehler beim Löschen vom Backend:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Fehler beim Löschen der Erinnerung:', error);
+    }
+  };
+
   const insets = useSafeAreaInsets();
   return (
     <View className="flex-1 w-full h-full bg-black" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
@@ -167,9 +231,10 @@ export default function Page() {
           <ReminderListItem
             item={item}
             onPress={() => onPress(index)}
+            onDelete={() => handleDeleteReminder(item, index)}
           />
         )}
-        keyExtractor={(_, index) => index.toString()}
+        keyExtractor={(item, index) => `${item.title}-${item.latitude}-${item.longitude}-${index}`}
         contentContainerClassName="px-2.5"
         refreshControl={<RefreshControl
           refreshing={isLoading}

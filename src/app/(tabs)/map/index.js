@@ -95,16 +95,13 @@ const Map = () => {
     }
   };
 
-  // Reagiere auf Tab-Wechsel: Zeige immer letzten Reminder oder aktuelle Position
   useFocusEffect(
     React.useCallback(() => {
       console.log('Map-Tab wurde fokussiert');
       console.log('Parameter beim Focus:', params);
       console.log('From-Parameter:', params.from);
 
-      // Kleine Verzögerung, um sicherzustellen, dass Parameter korrekt geladen sind
       setTimeout(() => {
-        // Prüfe, ob wir vom Home-Tab kommen und Reminder-Parameter haben
         if (params.latitude && params.longitude && params.from === 'home') {
           const lat = parseFloat(params.latitude);
           const lon = parseFloat(params.longitude);
@@ -129,7 +126,6 @@ const Map = () => {
           }
         }
 
-        // Wenn letzter Reminder vorhanden ist, zeige ihn an
         if (lastReminderPosition) {
           console.log('Focus: Zeige letzten Reminder an:', lastReminderPosition);
           setHasReminderParams(true);
@@ -148,14 +144,12 @@ const Map = () => {
           return;
         }
 
-        // Alle anderen Fälle - zur aktuellen Position zurückkehren
         console.log('Focus: Keine Reminder-Parameter - kehre zur aktuellen Position zurück');
         setHasReminderParams(false);
         setFollowsUser(true);
         loadCurrentLocation();
       }, 100);
 
-      // Cleanup-Funktion: Wird ausgeführt, wenn der Tab verlassen wird
       return () => {
         console.log('Map-Tab wird verlassen - lösche Parameter');
         if (params.latitude || params.longitude || params.from) {
@@ -249,7 +243,6 @@ const Map = () => {
     };
   }, [isExpoGoOnIOS, reminderData, location]);
 
-  // Live Location Update wenn followsUser aktiv ist
   useEffect(() => {
     let locationSubscription = null;
 
@@ -295,7 +288,6 @@ const Map = () => {
     console.log('Benutzer möchte zur aktuellen Position zurückkehren');
     setHasReminderParams(false);
     setFollowsUser(true);
-    // Lösche die Parameter aus der URL
     router.replace('/map');
     loadCurrentLocation();
   };
