@@ -61,14 +61,20 @@ const EditReminder = () => {
         const reminder = userReminders[id];
 
         if (reminder) {
-          setData(reminder);
+          // Sicherstellen, dass alle erforderlichen Felder vorhanden sind
+          setData({
+            title: reminder.title || '',
+            content: reminder.content || '',
+            radius: reminder.radius || '',
+            latitude: reminder.latitude || '0.0',
+            longitude: reminder.longitude || '0.0',
+          });
         } else {
-          Alert.alert('Fehler', 'Erinnerung nicht gefunden.');
+          console.error('Erinnerung nicht gefunden:', id);
           router.back();
         }
       } catch (error) {
         console.error('Error loading reminder:', error);
-        Alert.alert('Fehler', 'Fehler beim Laden der Erinnerung.');
         router.back();
       } finally {
         setIsDataLoading(false);

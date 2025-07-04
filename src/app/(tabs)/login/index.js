@@ -100,8 +100,6 @@ const LoginIndex = () => {
 
         // Zur Home-Seite navigieren, damit die Reminder-Liste aktualisiert wird
         router.push('/home');
-
-        Alert.alert('Erfolgreich', `Willkommen zurück, ${result.user.username}!`);
       } else {
         Alert.alert('Fehler', result.error || 'Ungültiger Benutzername oder Passwort.');
       }
@@ -163,10 +161,7 @@ const LoginIndex = () => {
 
           // Zur Home-Seite navigieren, damit die Reminder-Liste aktualisiert wird
           router.push('/home');
-
-          Alert.alert('Erfolgreich', `Willkommen, ${username}! Ihr Konto wurde erstellt und Sie sind jetzt angemeldet.`);
         } else {
-          Alert.alert('Registrierung erfolgreich', 'Bitte melden Sie sich jetzt an.');
           setIsLoginMode(true);
         }
       } else {
@@ -189,8 +184,6 @@ const LoginIndex = () => {
 
       // Zur Home-Seite navigieren, damit die Reminder-Liste geleert wird
       router.push('/home');
-
-      Alert.alert('Erfolgreich', 'Sie wurden abgemeldet.');
     } catch (error) {
       console.error('Logout error:', error);
       Alert.alert('Fehler', 'Ein Fehler ist beim Abmelden aufgetreten.');
@@ -288,8 +281,7 @@ const LoginIndex = () => {
                 value={password}
                 placeholder="Geben Sie Ihr Passwort ein"
                 onChangeText={(value) => handleInputChange('password', value)}
-                secureTextEntry
-                keyboardType='password'
+                secureTextEntry={true}
               />
 
               {!isLoginMode && (
@@ -298,7 +290,7 @@ const LoginIndex = () => {
                   value={confirmPassword}
                   placeholder="Bestätigen Sie Ihr Passwort"
                   onChangeText={(value) => handleInputChange('confirmPassword', value)}
-                  secureTextEntry
+                  secureTextEntry={true}
                 />
               )}
             </View>

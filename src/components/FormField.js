@@ -4,14 +4,15 @@ import React from 'react';
 const FormField = ({
   label,
   placeholder,
-  value,
+  value = '',
   onChangeText,
   multiline = false,
   numberOfLines = 1,
   keyboardType = 'default',
   hasError = false,
   isRequired = false,
-  errorMessage
+  errorMessage,
+  secureTextEntry = false
 }) => {
   const getInputClass = () => {
     let baseClass = 'bg-white rounded-lg p-3 border text-black';
@@ -40,12 +41,13 @@ const FormField = ({
           }}
           placeholder={placeholder}
           placeholderTextColor="#999"
-          value={value}
+          value={value || ''}
           onChangeText={onChangeText}
           multiline={multiline}
           numberOfLines={numberOfLines}
           keyboardType={keyboardType}
           textAlignVertical={multiline ? "top" : "center"}
+          secureTextEntry={secureTextEntry}
         />
       </View>
       {errorMessage && (
