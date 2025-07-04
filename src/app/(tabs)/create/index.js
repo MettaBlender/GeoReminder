@@ -153,7 +153,7 @@ const Index = () => {
       router.push('/home');
     } catch (error) {
       console.error('Error saving reminder:', error);
-      Alert.alert('Fehler', 'Fehler beim Speichern der Erinnerung.');
+      Alert.alert('Fehler', 'Ein Fehler ist beim Speichern der Erinnerung aufgetreten.');
     }
   };
 

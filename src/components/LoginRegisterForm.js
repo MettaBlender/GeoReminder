@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   toggleButtonText: {
-    color: '#4A90E2',
+    color: '#33a5f6',
     fontSize: 16,
     fontWeight: '500',
   },

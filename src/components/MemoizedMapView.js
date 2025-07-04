@@ -1,31 +1,41 @@
 import React, { useState, useEffect, memo } from 'react';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, Circle } from 'react-native-maps';
 
-const MemoizedMapView = memo(({ location, style, showsUserLocation, markers }) => (
+const MemoizedMapView = memo(({ region, style, showsUserLocation, followsUserLocation, onRegionChangeComplete, reminderData }) => (
   <MapView
     style={style}
-    initialRegion={{
-      latitude: location.latitude,
-      longitude: location.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    }}
+    region={region}
     showsUserLocation={showsUserLocation}
+    followsUserLocation={followsUserLocation}
+    onRegionChangeComplete={onRegionChangeComplete}
     showsTraffic={false}
     showsBuildings={false}
     loadingEnabled={true}
-  >   
-    {markers.map((marker) => (
-      <Marker
-        key={marker.identifier}
-        coordinate={{
-          latitude: marker.latitude,
-          longitude: marker.longitude,
-        }}
-        title={marker.title}
-        description={marker.content}
-        pinColor="#4CAF50"
-      />
+    showsMyLocationButton={true}
+    toolbarEnabled={false}
+  >
+    {reminderData && reminderData.map((reminder, index) => (
+      <React.Fragment key={index}>
+        <Marker
+          coordinate={{
+            latitude: reminder.latitude,
+            longitude: reminder.longitude,
+          }}
+          title={reminder.title}
+          description={reminder.content}
+          pinColor="#4CAF50"
+        />
+        <Circle
+          center={{
+            latitude: reminder.latitude,
+            longitude: reminder.longitude,
+          }}
+          radius={reminder.radius}
+          strokeColor="rgba(76, 175, 80, 0.8)"
+          fillColor="rgba(76, 175, 80, 0.3)"
+          strokeWidth={2}
+        />
+      </React.Fragment>
     ))}
   </MapView>
 ));

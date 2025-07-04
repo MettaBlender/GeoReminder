@@ -48,7 +48,6 @@ const Map = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialRegion, setInitialRegion] = useState(null);
-  const [followsUser, setFollowsUser] = useState(false);
 
   const {getItem} = useAsyncStorage('reminder');
   const { getItem: getCurrentUser } = useAsyncStorage('currentUser');
@@ -110,16 +109,15 @@ const Map = () => {
           latitude: lat,
           longitude: lon,
         });
-        setFollowsUser(false); // Nicht der aktuellen Position folgen
         setIsLoading(false);
         return;
       }
     }
 
-    // Nur aktuellen Standort laden und fokussieren, wenn keine Parameter vorhanden sind
-    setFollowsUser(true); // Der aktuellen Position folgen
+    // Nur aktuellen Standort laden, wenn keine Parameter vorhanden sind
     loadCurrentLocation();
   }, [params.latitude, params.longitude]);
+
   const loadCurrentLocation = async () => {
     console.log('Lade aktuellen Standort');
     try {
@@ -139,8 +137,8 @@ const Map = () => {
       setInitialRegion({
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
-        latitudeDelta: 0.005, // Kleinere Delta für besseren Fokus auf aktuelle Position
-        longitudeDelta: 0.005,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
       });
       setIsLoading(false);
     } catch (error) {
@@ -203,48 +201,6 @@ const Map = () => {
     };
   }, [isExpoGoOnIOS, reminderData, location]);
 
-  // Live Location Update wenn followsUser aktiv ist
-  useEffect(() => {
-    let locationSubscription = null;
-
-    if (followsUser && !params.latitude && !params.longitude) {
-      const startLocationTracking = async () => {
-        try {
-          const { status } = await Location.requestForegroundPermissionsAsync();
-          if (status === 'granted') {
-            locationSubscription = await Location.watchPositionAsync(
-              {
-                accuracy: Location.Accuracy.Balanced,
-                timeInterval: 5000, // Update alle 5 Sekunden
-                distanceInterval: 10, // Update bei 10 Meter Bewegung
-              },
-              (newLocation) => {
-                console.log('Neue Position erhalten:', newLocation.coords);
-                setLocation(newLocation.coords);
-                setInitialRegion({
-                  latitude: newLocation.coords.latitude,
-                  longitude: newLocation.coords.longitude,
-                  latitudeDelta: 0.005,
-                  longitudeDelta: 0.005,
-                });
-              }
-            );
-          }
-        } catch (error) {
-          console.error('Fehler beim Live-Location-Tracking:', error);
-        }
-      };
-
-      startLocationTracking();
-    }
-
-    return () => {
-      if (locationSubscription) {
-        locationSubscription.remove();
-      }
-    };
-  }, [followsUser, params.latitude, params.longitude]);
-
   if (errorMsg) {
     return (
       <View style={styles.container}>
@@ -265,12 +221,8 @@ const Map = () => {
           style={styles.map}
           region={initialRegion}
           showsUserLocation={true}
-          followsUserLocation={followsUser}
-          onRegionChangeComplete={(region) => {
-            if (!followsUser) {
-              setInitialRegion(region);
-            }
-          }}
+          followsUserLocation={false}
+          onRegionChangeComplete={(region) => setInitialRegion(region)}
           reminderData={reminderData}
         />
       ) : (

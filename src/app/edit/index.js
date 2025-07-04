@@ -84,7 +84,7 @@ const EditReminder = () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           setErrorMsg('Standortzugriff verweigert.');
-          Alert.alert('Berechtigung verweigert', 'Bitte erlaube den Zugriff auf den Standort.');
+          Alert.alert('Berechtigung verweigert', 'Bitte gewähren Sie den Zugriff auf den Standort.');
           setIsMapLoading(false);
           return;
         }
@@ -138,7 +138,7 @@ const EditReminder = () => {
       setSearchResults(results);
     } catch (error) {
       console.error('Fehler bei der Suche:', error.message);
-      Alert.alert('Fehler', 'Suche konnte nicht durchgeführt werden.');
+      Alert.alert('Fehler', 'Die Suche konnte nicht durchgeführt werden.');
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -160,7 +160,7 @@ const EditReminder = () => {
 
   const handleSubmit = async () => {
     if (!data.title.trim() || !data.content.trim() || !data.radius.trim() || !data.latitude || !data.longitude) {
-      Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
+      Alert.alert('Fehler', 'Bitte füllen Sie alle Felder aus.');
       return;
     }
     if (!isPositiveNumber(data.radius)) {
@@ -168,7 +168,7 @@ const EditReminder = () => {
       return;
     }
     if (data.latitude === '0.0' || data.longitude === '0.0') {
-      Alert.alert('Fehler', 'Bitte setze einen Pin auf der Karte oder gib gültige Koordinaten ein.');
+      Alert.alert('Fehler', 'Bitte setzen Sie einen Pin auf der Karte oder geben Sie gültige Koordinaten ein.');
       return;
     }
 
@@ -196,14 +196,14 @@ const EditReminder = () => {
       router.push('/home');
     } catch (error) {
       console.error('Error saving reminder:', error);
-      Alert.alert('Fehler', 'Fehler beim Speichern der Erinnerung.');
+      Alert.alert('Fehler', 'Ein Fehler ist beim Speichern der Erinnerung aufgetreten.');
     }
   };
 
   const handleDelete = () => {
     Alert.alert(
       'Erinnerung löschen',
-      `Möchtest du die Erinnerung "${data.title}" wirklich löschen? Gelöschte Erinnerungen können nicht wiederhergestellt werden.`,
+      `Möchten Sie die Erinnerung "${data.title}" wirklich löschen? Gelöschte Erinnerungen können nicht wiederhergestellt werden.`,
       [
         { text: 'Abbrechen', style: 'cancel' },
         {
@@ -228,7 +228,7 @@ const EditReminder = () => {
               }
 
               if (!userReminders[id]) {
-                Alert.alert('Fehler', 'Erinnerung nicht gefunden.');
+                Alert.alert('Fehler', 'Die Erinnerung wurde nicht gefunden.');
                 router.push('/home');
                 return;
               }
@@ -240,7 +240,7 @@ const EditReminder = () => {
               router.push('/home');
             } catch (error) {
               console.error('Error deleting reminder:', error);
-              Alert.alert('Fehler', 'Fehler beim Löschen der Erinnerung. Bitte versuche es erneut.');
+              Alert.alert('Fehler', 'Ein Fehler ist beim Löschen der Erinnerung aufgetreten. Bitte versuchen Sie es erneut.');
             }
           },
         },
@@ -283,10 +283,10 @@ const EditReminder = () => {
   const getRadiusError = () => {
     if (data.radius.length === 0) return null;
     if (!/^[0-9]+(\.[0-9]+)?$/.test(data.radius.trim())) {
-      return 'Bitte gib nur Ziffern ein (z.B. 100 oder 50.5).';
+      return 'Bitte geben Sie nur Ziffern ein (z.B. 100 oder 50.5).';
     }
     if (!isPositiveNumber(data.radius)) {
-      return 'Bitte gib eine positive Zahl für den Radius ein (z.B. 100 für 100 Meter).';
+      return 'Bitte geben Sie eine positive Zahl für den Radius ein (z.B. 100 für 100 Meter).';
     }
     return null;
   };
