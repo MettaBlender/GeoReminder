@@ -77,7 +77,7 @@ const Index = () => {
       searchCache[query] = results;
     } catch (error) {
       console.error('Fehler bei der Suche:', error.message);
-      Alert.alert('Fehler', 'Suche konnte nicht durchgeführt werden. Bitte versuche es später erneut.');
+      Alert.alert('Fehler', 'Die Suche konnte nicht durchgeführt werden. Bitte versuchen Sie es später erneut.');
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -108,7 +108,7 @@ const Index = () => {
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim() || !radius.trim() || !latitude || !longitude) {
-      Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
+      Alert.alert('Fehler', 'Bitte füllen Sie alle Felder aus.');
       return;
     }
 
@@ -118,7 +118,7 @@ const Index = () => {
     }
 
     if (latitude === '0.0' || longitude === '0.0') {
-      Alert.alert('Fehler', 'Bitte setze einen Pin auf der Karte oder gib gültige Koordinaten ein.');
+      Alert.alert('Fehler', 'Bitte setzen Sie einen Pin auf der Karte oder geben Sie gültige Koordinaten ein.');
       return;
     }    try {
       const user = await getCurrentUser();
@@ -177,7 +177,7 @@ const Index = () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           setErrorMsg('Standortzugriff verweigert.');
-          Alert.alert('Berechtigung verweigert', 'Bitte erlaube den Zugriff auf den Standort.');
+          Alert.alert('Berechtigung verweigert', 'Bitte gewähren Sie den Zugriff auf den Standort.');
           setIsLoading(false);
           return;
         }
@@ -231,10 +231,10 @@ const Index = () => {
   const getRadiusError = () => {
     if (radius.length === 0) return null;
     if (!/^[0-9]+(\.[0-9]+)?$/.test(radius.trim())) {
-      return 'Bitte gib nur Ziffern ein (z.B. 100 oder 50.5).';
+      return 'Bitte geben Sie nur Ziffern ein (z.B. 100 oder 50.5).';
     }
     if (!isPositiveNumber(radius)) {
-      return 'Bitte gib eine positive Zahl für den Radius ein (z.B. 100 für 100 Meter).';
+      return 'Bitte geben Sie eine positive Zahl für den Radius ein (z.B. 100 für 100 Meter).';
     }
     return null;
   };
@@ -331,7 +331,7 @@ const Index = () => {
                 onPress={handleSubmit}
                 disabled={!areAllFieldsValid()}
               >
-                {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
+                {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Erstellen'}
               </SubmitButton>
             </View>
           </ScrollView>
