@@ -193,7 +193,7 @@ const EditReminder = () => {
       allReminders[userId] = userReminders;
 
       await setItem(JSON.stringify(allReminders));
-      router.push('/home');
+      router.back();
     } catch (error) {
       console.error('Error saving reminder:', error);
       Alert.alert('Fehler', 'Ein Fehler ist beim Speichern der Erinnerung aufgetreten.');
@@ -229,7 +229,7 @@ const EditReminder = () => {
 
               if (!userReminders[id]) {
                 Alert.alert('Fehler', 'Die Erinnerung wurde nicht gefunden.');
-                router.push('/home');
+                router.back();
                 return;
               }
 
@@ -237,7 +237,7 @@ const EditReminder = () => {
               allReminders[userId] = userReminders;
 
               await setItem(JSON.stringify(allReminders));
-              router.push('/home');
+              router.back();
             } catch (error) {
               console.error('Error deleting reminder:', error);
               Alert.alert('Fehler', 'Ein Fehler ist beim Löschen der Erinnerung aufgetreten. Bitte versuchen Sie es erneut.');
@@ -381,7 +381,7 @@ const EditReminder = () => {
                   disabled={!areAllFieldsValid()}
                   width="80%"
                 >
-                  {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Absenden'}
+                  {!areAllFieldsValid() ? 'Bitte alle Felder ausfüllen' : 'Speichern'}
                 </SubmitButton>
                 <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
                   <Trash/>

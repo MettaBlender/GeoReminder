@@ -20,7 +20,7 @@ const ReminderListItem = ({ item, onPress }) => {
             <Text className="text-white text-base" numberOfLines={1} ellipsizeMode='true'>{item.content}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={onPress}>
-            <MaterialIcons size={28} style={{ margin: -3 }} name="edit" color="white"/>
+            <MaterialIcons size={28} style={{ margin: -3, marginLeft: 4 }} name="edit" color="white"/>
         </TouchableOpacity>
     </View>
   )
