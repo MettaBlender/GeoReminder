@@ -15,7 +15,7 @@ const MemoizedMapView = memo(({ region, style, showsUserLocation, followsUserLoc
     toolbarEnabled={false}
   >
     {reminderData && reminderData.map((reminder, index) => (
-      <React.Fragment key={index}>
+      <React.Fragment key={reminder.localId || reminder.id || `${reminder.title}-${index}`}>
         <Marker
           coordinate={{
             latitude: reminder.latitude,
@@ -38,6 +38,17 @@ const MemoizedMapView = memo(({ region, style, showsUserLocation, followsUserLoc
       </React.Fragment>
     ))}
   </MapView>
-));
+), (prevProps, nextProps) => {
+  // Custom comparison function to ensure re-render when reminderData changes
+  return (
+    prevProps.region?.latitude === nextProps.region?.latitude &&
+    prevProps.region?.longitude === nextProps.region?.longitude &&
+    prevProps.region?.latitudeDelta === nextProps.region?.latitudeDelta &&
+    prevProps.region?.longitudeDelta === nextProps.region?.longitudeDelta &&
+    prevProps.showsUserLocation === nextProps.showsUserLocation &&
+    prevProps.followsUserLocation === nextProps.followsUserLocation &&
+    JSON.stringify(prevProps.reminderData) === JSON.stringify(nextProps.reminderData)
+  );
+});
 
 export default MemoizedMapView;

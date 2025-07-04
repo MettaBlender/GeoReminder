@@ -68,8 +68,13 @@ const Map = () => {
       let userId = 'unsigned';
 
       if (user) {
-        const userData = JSON.parse(user);
-        userId = userData.id || userData.username;
+        try {
+          const userData = JSON.parse(user);
+          userId = userData.id || userData.username || 'unsigned';
+        } catch (parseError) {
+          console.warn('Fehler beim Parsen der Benutzerdaten, verwende unsigned:', parseError);
+          userId = 'unsigned';
+        }
       }
 
       const { default: SyncManager } = await import('@/utils/syncManager');
@@ -82,10 +87,18 @@ const Map = () => {
         longitude: parseFloat(item.longitude),
       }));
 
-      console.log('Parsed reminderData:', numericData);
+      console.log('Geladene Reminder-Daten für Map:', numericData.length);
+      console.log('Reminder-Daten Details:', numericData.map(r => ({
+        title: r.title,
+        lat: r.latitude,
+        lng: r.longitude,
+        radius: r.radius,
+        localId: r.localId,
+        serverId: r.serverId
+      })));
       setReminderData(numericData);
     } catch (error) {
-      console.error("Error loading items:", error);
+      console.error("Fehler beim Laden der Erinnerungsdaten:", error);
       setReminderData([]);
     }
   };
@@ -95,6 +108,9 @@ const Map = () => {
       console.log('Map-Tab wurde fokussiert');
       console.log('Parameter beim Focus:', params);
       console.log('From-Parameter:', params.from);
+
+      // Lade immer die aktuellen Daten aus AsyncStorage
+      getData();
 
       setTimeout(() => {
         if (params.latitude && params.longitude && params.from === 'home') {
@@ -186,13 +202,14 @@ const Map = () => {
   };
 
   useEffect(() => {
+    console.log('Map-Komponente wurde gemountet - lade Daten');
     getData();
   }, []);
 
   useEffect(() => {
     if (reminderData.length === 0 || !location) return;
 
-    console.log('Richte Geofencing ein');
+    console.log('Richte Geofencing ein mit', reminderData.length, 'Reminders');
     (async () => {
       try {
         if (!Device.isDevice) {
@@ -207,12 +224,21 @@ const Map = () => {
         }
 
         if (!isExpoGoOnIOS) {
-          console.log('Geofencing wird gestartet');
+          console.log('Geofencing wird gestartet mit', reminderData.length, 'Reminders');
           const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
           if (backgroundStatus !== 'granted') {
             console.log('Hintergrund-Standortzugriff verweigert');
             return;
           }
+
+          // Stoppe zuerst das alte Geofencing
+          try {
+            await Location.stopGeofencingAsync(GEOFENCING_TASK);
+          } catch (error) {
+            console.log('Kein vorheriges Geofencing zu stoppen:', error.message);
+          }
+
+          // Starte neues Geofencing mit aktuellen Daten
           await Location.startGeofencingAsync(GEOFENCING_TASK, reminderData.map(reminder => ({
             identifier: reminder.title,
             latitude: reminder.latitude,
