@@ -173,7 +173,6 @@ export default function Page() {
 
       const userReminders = allReminders[userId] || [];
 
-      // Finde das Item anhand der Eigenschaften (da Index sich ändern kann)
       const itemIndex = userReminders.findIndex(reminder =>
         reminder.title === itemToDelete.title &&
         reminder.content === itemToDelete.content &&
@@ -188,18 +187,14 @@ export default function Page() {
 
       console.log('Gefundener Index für Löschung:', itemIndex);
 
-      // Item aus dem Array entfernen
       const removedItem = userReminders.splice(itemIndex, 1)[0];
       console.log('Gelöschtes Item:', removedItem);
 
-      // Aktualisierte Daten speichern
       allReminders[userId] = userReminders;
       await setItem(JSON.stringify(allReminders));
 
-      // UI aktualisieren
       setReminderData([...userReminders]);
 
-      // Optional: Auch vom Backend löschen, wenn eingeloggt
       if (currentUserId && removedItem?.id) {
         try {
           const token = await getToken();

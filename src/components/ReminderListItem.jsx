@@ -9,7 +9,7 @@ const { width: screenWidth } = Dimensions.get('window');
 
 const ReminderListItem = ({ item, onPress, onDelete }) => {
   const translateX = useRef(new Animated.Value(0)).current;
-  const deleteThreshold = screenWidth * 0.25; // 25% der Bildschirmbreite (etwas weniger für bessere UX)
+  const deleteThreshold = screenWidth * 0.25;
   const isDeleting = useRef(false);
 
   const handleMapPress = () => {
@@ -19,20 +19,17 @@ const ReminderListItem = ({ item, onPress, onDelete }) => {
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // Nur bei horizontalen Swipes reagieren
         return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
       },
       onPanResponderMove: (evt, gestureState) => {
-        // Nur nach rechts swipen erlauben (negative Werte)
         if (gestureState.dx < 0) {
           translateX.setValue(gestureState.dx);
         }
       },
       onPanResponderRelease: (evt, gestureState) => {
-        if (isDeleting.current) return; // Verhindere mehrfaches Löschen
+        if (isDeleting.current) return;
 
         if (gestureState.dx < -deleteThreshold) {
-          // Schwellenwert überschritten - Item löschen
           isDeleting.current = true;
           Animated.timing(translateX, {
             toValue: -screenWidth,
@@ -44,7 +41,6 @@ const ReminderListItem = ({ item, onPress, onDelete }) => {
             }
           });
         } else {
-          // Zurück zur ursprünglichen Position
           Animated.spring(translateX, {
             toValue: 0,
             useNativeDriver: true,
@@ -56,7 +52,6 @@ const ReminderListItem = ({ item, onPress, onDelete }) => {
 
   return (
     <View style={{ position: 'relative', overflow: 'hidden' }}>
-      {/* Roter Hintergrund mit Papierkorb-Icon */}
       <View style={{
         position: 'absolute',
         right: 0,
@@ -71,7 +66,6 @@ const ReminderListItem = ({ item, onPress, onDelete }) => {
         <MaterialIcons size={28} name="delete" color="white" />
       </View>
 
-      {/* Swipebares Item */}
       <Animated.View
         style={{
           transform: [{ translateX }],
