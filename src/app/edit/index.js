@@ -35,25 +35,21 @@ const EditReminder = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Load the reminder data
   useEffect(() => {
     const loadReminder = async () => {
       try {
-        // Aktuellen Benutzer laden
         const user = await getCurrentUser();
-        let userId = 'unsigned'; // Standard für nicht angemeldete Benutzer
+        let userId = 'unsigned';
 
         if (user) {
           const userData = JSON.parse(user);
           userId = userData.id || userData.username;
         }
 
-        // Benutzerspezifische oder unsignierte Reminder laden
         const reminders = await getItem();
         const allReminders = reminders ? JSON.parse(reminders) : {};
         let userReminders = allReminders[userId];
 
-        // Sicherstellen, dass userReminders ein Array ist
         if (!Array.isArray(userReminders)) {
           userReminders = [];
         }
@@ -61,7 +57,6 @@ const EditReminder = () => {
         const reminder = userReminders[id];
 
         if (reminder) {
-          // Sicherstellen, dass alle erforderlichen Felder vorhanden sind
           setData({
             title: reminder.title || '',
             content: reminder.content || '',
@@ -83,7 +78,6 @@ const EditReminder = () => {
     loadReminder();
   }, [id]);
 
-  // Get the user's current location
   useEffect(() => {
     (async () => {
       try {
@@ -179,21 +173,18 @@ const EditReminder = () => {
     }
 
     try {
-      // Aktuellen Benutzer laden
       const user = await getCurrentUser();
-      let userId = 'unsigned'; // Standard für nicht angemeldete Benutzer
+      let userId = 'unsigned';
 
       if (user) {
         const userData = JSON.parse(user);
         userId = userData.id || userData.username;
       }
 
-      // Benutzerspezifische oder unsignierte Reminder laden und aktualisieren
       const value = await getItem();
       const allReminders = value ? JSON.parse(value) : {};
       let userReminders = allReminders[userId];
 
-      // Sicherstellen, dass userReminders ein Array ist
       if (!Array.isArray(userReminders)) {
         userReminders = [];
       }
@@ -220,21 +211,18 @@ const EditReminder = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Aktuellen Benutzer laden
               const user = await getCurrentUser();
-              let userId = 'unsigned'; // Standard für nicht angemeldete Benutzer
+              let userId = 'unsigned';
 
               if (user) {
                 const userData = JSON.parse(user);
                 userId = userData.id || userData.username;
               }
 
-              // Benutzerspezifische oder unsignierte Reminder laden und löschen
               const reminders = await getItem();
               const allReminders = reminders ? JSON.parse(reminders) : {};
               let userReminders = allReminders[userId];
 
-              // Sicherstellen, dass userReminders ein Array ist
               if (!Array.isArray(userReminders)) {
                 userReminders = [];
               }
@@ -264,33 +252,6 @@ const EditReminder = () => {
     Keyboard.dismiss();
     setSearchResults([]);
   };
-
-  // Load location and permission
-  useEffect(() => {
-    (async () => {
-      try {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setErrorMsg('Standortzugriff verweigert.');
-          Alert.alert('Berechtigung verweigert', 'Bitte erlaube den Zugriff auf den Standort.');
-          setIsMapLoading(false);
-          return;
-        }
-        let currentLocation = await Location.getCurrentPositionAsync({
-          accuracy: Platform.OS === 'ios' ? Location.Accuracy.Highest : Location.Accuracy.Balanced,
-        });
-        setLocation({
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
-        });
-        setIsMapLoading(false);
-      } catch (error) {
-        console.error('Fehler beim Abrufen des Standorts:', error);
-        setErrorMsg('Fehler beim Laden des Standorts.');
-        setIsMapLoading(false);
-      }
-    })();
-  }, []);
 
   const isPositiveNumber = (value) => {
     const numericRegex = /^[0-9]+(\.[0-9]+)?$/;

@@ -8,7 +8,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 
 export default function Page() {
-  const router = useRouter(); // Moved to top level
+  const router = useRouter();
 
   const {getItem, setItem} = useAsyncStorage('reminder');
   const { getItem: getToken } = useAsyncStorage('authToken');
@@ -31,12 +31,10 @@ export default function Page() {
         return;
       }
 
-      // Lokale benutzerspezifische Daten laden
       const localData = await getItem();
       const allLocalReminders = localData ? JSON.parse(localData) : {};
       const userReminders = allLocalReminders[activeUserId] || [];
 
-      // Backup: Lokale Daten an Backend senden (nur falls sie noch nicht existieren)
       for (const reminder of userReminders) {
         try {
           await fetch(`${API_BASE_URL}/api/reminders`, {
@@ -58,7 +56,6 @@ export default function Page() {
         }
       }
 
-      // Backend-Daten als zusätzliches Backup holen (überschreibt NICHT lokale Daten)
       const response = await fetch(`${API_BASE_URL}/api/reminders`, {
         method: 'GET',
         headers: {
@@ -70,7 +67,6 @@ export default function Page() {
         const result = await response.json();
         const backendReminders = result.data || [];
 
-        // Nur mergen, wenn lokale Daten leer sind
         if (userReminders.length === 0 && backendReminders.length > 0) {
           const updatedLocalData = { ...allLocalReminders };
           updatedLocalData[activeUserId] = backendReminders;
@@ -91,7 +87,6 @@ export default function Page() {
   const getData = async () => {
     setIsLoading(true);
     try {
-      // Aktuelle Benutzer-ID laden
       const user = await getCurrentUser();
 
       const value = await getItem();
@@ -99,11 +94,9 @@ export default function Page() {
 
       console.log('Raw storage data:', rawData);
 
-      // Migration: Überprüfe ob die Daten im alten Format (Array) gespeichert sind
       let allReminders = {};
       if (Array.isArray(rawData)) {
         console.log('Migriere alte Datenstruktur...');
-        // Alte Daten waren ein Array - migriere zu unsigned
         allReminders['unsigned'] = rawData;
         await setItem(JSON.stringify(allReminders));
         console.log('Migration abgeschlossen:', allReminders);
@@ -112,7 +105,6 @@ export default function Page() {
       }
 
       if (!user) {
-        // Kein angemeldeter Benutzer - zeige unsignierte Reminders
         console.log('Kein angemeldeter Benutzer gefunden - zeige unsignierte Reminders');
         const unsignedReminders = allReminders['unsigned'] || [];
         console.log('Unsigned reminders:', unsignedReminders);
@@ -125,23 +117,18 @@ export default function Page() {
       const userData = JSON.parse(user);
       const userId = userData.id || userData.username;
 
-      // Nur aktualisieren wenn sich der Benutzer geändert hat
       if (currentUserId !== userId) {
         setCurrentUserId(userId);
 
-        // Sofort leeren, um keine Daten des vorherigen Benutzers anzuzeigen
         setReminderData([]);
 
-        // Benutzerspezifische lokale Daten laden
         const userReminders = allReminders[userId] || [];
 
         console.log('reminderData für User', userId, ':', userReminders);
         setReminderData(userReminders);
 
-        // Dann mit Backend synchronisieren
         await syncWithBackend(userId);
       } else if (currentUserId) {
-        // Wenn derselbe Benutzer, aktualisiere die Daten und sync mit Backend
         const userReminders = allReminders[userId] || [];
         console.log('Aktualisiere Daten für bestehenden User', userId, ':', userReminders);
         setReminderData(userReminders);
@@ -154,21 +141,19 @@ export default function Page() {
     }
   };
 
-  // Bestehende useEffect für initiale Ladung
   useEffect(() => {
     getData();
   }, []);
 
-  // Neue useFocusEffect für Aktualisierung beim Tab-Wechsel
   useFocusEffect(
     useCallback(() => {
       getData();
-      return () => {}; // Cleanup-Funktion
+      return () => {};
     }, [])
   );
 
   const onPress = (index) => {
-    console.log('Navigating to edit with id:', index); // For debugging
+    console.log('Navigating to edit with id:', index);
     router.push(`/edit?id=${index.toString()}`);
   };
 
@@ -181,7 +166,7 @@ export default function Page() {
         renderItem={({ item, index }) => (
           <ReminderListItem
             item={item}
-            onPress={() => onPress(index)} // Pass a function that calls onPress with index
+            onPress={() => onPress(index)}
           />
         )}
         keyExtractor={(_, index) => index.toString()}

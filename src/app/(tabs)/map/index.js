@@ -1,17 +1,14 @@
-import { StyleSheet, View, Text, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, Alert, ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import React, { useState, useEffect, memo } from 'react';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
-import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import MemoizedMapView from '@/components/MemoizedMapView';
+import MemoizedMapView from '../../../components/MemoizedMapView';
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 
-// Task-Name für Geofencing
-const GEOFENCING_TASK = 'geofencing-task';
+const GEOFENCING_TASK = 'background-location-task';
 
-// Benachrichtigungskonfiguration
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -20,27 +17,26 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Hintergrundtask für Geofencing
-TaskManager.defineTask(GEOFENCING_TASK, async ({ data, error }) => {
+TaskManager.defineTask(GEOFENCING_TASK, ({ data, error }) => {
   if (error) {
     console.error('Geofencing error:', error);
     return;
   }
+
   if (data) {
     const { eventType, region } = data;
-    if (eventType === Location.GeofencingEventType.Enter) {
-      console.log(`Region betreten: ${JSON.stringify(region)}`);
-      console.log('Region properties:', Object.keys(region));
-      const title = region.identifier || 'Unbekannte Erinnerung';
-      const content = region.notificationMessage || region.identifier || 'Erinnerung ausgelöst';
 
-      await Notifications.scheduleNotificationAsync({
+    if (eventType === Location.GeofencingEventType.Enter) {
+      const notificationMessage = region.notificationMessage || `Sie haben den Bereich "${region.identifier}" betreten.`;
+
+      Notifications.scheduleNotificationAsync({
         content: {
-          title: 'GeoReminder: ' + title,
-          body: content,
+          title: 'Geo-Erinnerung',
+          body: notificationMessage,
+          sound: true,
         },
         trigger: null,
-      });
+      }).catch(err => console.error('Notification error:', err));
     }
   }
 });
@@ -54,7 +50,6 @@ const Map = () => {
 
   const [reminderData, setReminderData] = useState([])
 
-  // Check if running in Expo Go on iOS
   const isExpoGoOnIOS = Constants.appOwnership === 'expo' && Platform.OS === 'ios';
 
   const getData = () => {
@@ -105,7 +100,6 @@ const Map = () => {
           return;
         }
 
-        // Berechtigungen für Benachrichtigungen anfragen
         const { status: notificationStatus } = await Notifications.requestPermissionsAsync();
         if (notificationStatus !== 'granted') {
           setErrorMsg('Benachrichtigungsberechtigung verweigert.');
@@ -114,7 +108,6 @@ const Map = () => {
           return;
         }
 
-        // Berechtigungen für Standort anfragen
         const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
         if (foregroundStatus !== 'granted') {
           setErrorMsg('Standortzugriff im Vordergrund verweigert.');
@@ -123,14 +116,12 @@ const Map = () => {
           return;
         }
 
-        // Standort abrufen
         console.log('Standort wird abgerufen');
         const currentLocation = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
         setLocation(currentLocation.coords);
 
-        // Geofencing nur starten, wenn nicht in Expo Go auf iOS
         if (!isExpoGoOnIOS) {
           console.log('Geofencing wird gestartet');
           const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
@@ -141,11 +132,11 @@ const Map = () => {
             return;
           }
           await Location.startGeofencingAsync(GEOFENCING_TASK, reminderData.map(reminder => ({
-            identifier: reminder.title, // Verwendet title als identifier
+            identifier: reminder.title,
             latitude: reminder.latitude,
             longitude: reminder.longitude,
             radius: reminder.radius,
-            notificationMessage: reminder.content, // Speichert content für später
+            notificationMessage: reminder.content,
           })));
         } else {
           console.log('Geofencing wird in Expo Go auf iOS übersprungen (nicht unterstützt).');

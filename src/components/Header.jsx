@@ -4,7 +4,6 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const Header = ({ title, subtitle }) => {
-  // Überprüfe, ob title definiert ist
   if (!title) {
     return (
       <View>

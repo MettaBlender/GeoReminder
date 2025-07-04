@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import "../global.css";
-import Logo from '../assets/logo.svg'; // Adjust path if necessary
+import Logo from '../assets/logo.svg';
 
 const ReminderListItem = ({ item, onPress }) => {
   return (

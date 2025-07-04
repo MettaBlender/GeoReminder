@@ -121,21 +121,18 @@ const Index = () => {
       Alert.alert('Fehler', 'Bitte setze einen Pin auf der Karte oder gib gültige Koordinaten ein.');
       return;
     }    try {
-      // Aktuellen Benutzer laden
       const user = await getCurrentUser();
-      let userId = 'unsigned'; // Standard für nicht angemeldete Benutzer
+      let userId = 'unsigned';
 
       if (user) {
         const userData = JSON.parse(user);
         userId = userData.id || userData.username;
       }
 
-      // Benutzerspezifische oder unsignierte Reminder laden und hinzufügen
       const value = await getItem();
       const allReminders = value ? JSON.parse(value) : {};
       let userReminders = allReminders[userId];
 
-      // Sicherstellen, dass userReminders ein Array ist
       if (!Array.isArray(userReminders)) {
         userReminders = [];
       }

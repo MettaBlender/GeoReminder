@@ -23,9 +23,9 @@ const FormField = ({
 
   const getInputHeight = () => {
     if (multiline) {
-      return numberOfLines * 20 + 24; // 20px pro Zeile + padding
+      return numberOfLines * 20 + 24;
     }
-    return 48; // Feste Höhe für einzeilige Inputs
+    return 48;
   };
 
   return (
