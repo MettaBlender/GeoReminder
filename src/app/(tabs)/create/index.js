@@ -188,7 +188,7 @@ const Index = () => {
           return;
         }
 
-        let currentLocation = await Location.getCurrentPositionAsync({
+        let currentLocation = await Location.getLastKnownPositionAsync({
           accuracy: Platform.OS === 'ios' ? Location.Accuracy.Highest : Location.Accuracy.Balanced,
         });
         setLocation({
