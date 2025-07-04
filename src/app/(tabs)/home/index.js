@@ -67,15 +67,11 @@ export default function Page() {
         const result = await response.json();
         const backendReminders = result.data || [];
 
-        if (userReminders.length === 0 && backendReminders.length > 0) {
-          const updatedLocalData = { ...allLocalReminders };
-          updatedLocalData[activeUserId] = backendReminders;
-          await setItem(JSON.stringify(updatedLocalData));
-          setReminderData(backendReminders);
-          console.log('Backend-Daten als Backup geladen da keine lokalen Daten vorhanden');
-        } else {
-          console.log('Lokale Daten beibehalten, Backend als Backup gespeichert');
-        }
+        const updatedLocalData = { ...allLocalReminders };
+        updatedLocalData[activeUserId] = backendReminders;
+        await setItem(JSON.stringify(updatedLocalData));
+        setReminderData(backendReminders);
+        console.log('Lokale Daten mit Backend-Daten überschrieben für angemeldeten Benutzer');
       } else {
         console.error('Fehler beim Abrufen der Backend-Daten:', response.status);
       }
