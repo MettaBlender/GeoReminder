@@ -29,7 +29,7 @@ GeoReminder is a cross-platform mobile app (React Native + Expo) for location-ba
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/yourusername/GeoReminder.git
+   git clone https://github.com/MettaBlender/GeoReminder
    cd GeoReminder
    ```
 
