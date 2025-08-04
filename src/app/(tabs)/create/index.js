@@ -1,6 +1,7 @@
 import { View, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text, KeyboardAvoidingView, ScrollView } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import MapView, { Marker } from 'react-native-maps';
+import SafeMapView from '../../../components/SafeMapView';
+import { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import SearchBar from '../../../components/SearchBar';
@@ -271,7 +272,7 @@ const Index = () => {
                   handleSelectPlace={handleSelectPlace}
                 />
 
-                <MapView
+                <SafeMapView
                   style={styles.map}
                   initialRegion={{
                     latitude: location.latitude,
@@ -294,7 +295,7 @@ const Index = () => {
                       pinColor="#4CAF50"
                     />
                   )}
-                </MapView>
+                </SafeMapView>
 
                 <CoordinateInput
                   latitude={latitude}

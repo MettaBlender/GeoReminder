@@ -1,5 +1,5 @@
 import React, { useState, useEffect, memo } from 'react';
-import MapView, { Marker, Circle } from 'react-native-maps';
+import MapView, { Marker, Circle, UrlTile } from 'react-native-maps';
 
 const MemoizedMapView = memo(({ region, style, showsUserLocation, followsUserLocation, onRegionChangeComplete, reminderData }) => (
   <MapView
@@ -13,7 +13,13 @@ const MemoizedMapView = memo(({ region, style, showsUserLocation, followsUserLoc
     loadingEnabled={true}
     showsMyLocationButton={true}
     toolbarEnabled={false}
+    mapType="none"
   >
+    <UrlTile
+      urlTemplate="https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png"
+      maximumZ={19}
+      minimumZ={1}
+    />
     {reminderData && reminderData.map((reminder, index) => (
       <React.Fragment key={reminder.localId || reminder.id || `${reminder.title}-${index}`}>
         <Marker

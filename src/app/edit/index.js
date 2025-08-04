@@ -1,6 +1,7 @@
 import { View, ScrollView, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import MapView, { Marker } from 'react-native-maps';
+import SafeMapView from '@/components/SafeMapView';
+import { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import SearchBar from '@/components/SearchBar';
@@ -375,7 +376,7 @@ const EditReminder = () => {
                   <Text style={styles.mapLoadingText}>Karte wird geladen...</Text>
                 </View>
               ) : (
-                <MapView
+                <SafeMapView
                   style={styles.map}
                   initialRegion={{
                     latitude: parseFloat(data.latitude) || location.latitude,
@@ -397,7 +398,7 @@ const EditReminder = () => {
                       pinColor="green"
                     />
                   )}
-                </MapView>
+                </SafeMapView>
               )}
               <CoordinateInput
                 latitude={data.latitude}

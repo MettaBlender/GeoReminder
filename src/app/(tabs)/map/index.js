@@ -5,7 +5,12 @@ import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import MemoizedMapView from '../../../components/MemoizedMapView';
+// import MemoizedMapView from '../../../components/MemoizedMapView'; // Google Maps Version
+// import OpenStreetMapView from '../../../components/OpenStreetMapView'; // OpenStreetMap Version
+import SafeMapView from '../../../components/SafeMapView'; // Sichere Map-Komponente
+import MapErrorBoundary from '../../../components/MapErrorBoundary';
+// import AdvancedOpenStreetMapView from '../../../components/AdvancedOpenStreetMapView'; // Mit Style-Selektor
+// import LeafletMapView from '../../../components/LeafletMapView'; // Leaflet Alternative
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useFocusEffect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -80,23 +85,27 @@ const Map = () => {
       const { default: SyncManager } = await import('@/utils/syncManager');
       const result = await SyncManager.getLocalReminders(userId);
 
-      const numericData = result.map(item => ({
-        ...item,
-        radius: parseFloat(item.radius),
-        latitude: parseFloat(item.latitude),
-        longitude: parseFloat(item.longitude),
-      }));
+      // Sichere Datenvalidierung
+      const validData = result
+        .filter(item => {
+          if (!item) return false;
+          const lat = parseFloat(item.latitude);
+          const lng = parseFloat(item.longitude);
+          const radius = parseFloat(item.radius);
 
-      console.log('Geladene Reminder-Daten für Map:', numericData.length);
-      console.log('Reminder-Daten Details:', numericData.map(r => ({
-        title: r.title,
-        lat: r.latitude,
-        lng: r.longitude,
-        radius: r.radius,
-        localId: r.localId,
-        serverId: r.serverId
-      })));
-      setReminderData(numericData);
+          return !isNaN(lat) && !isNaN(lng) && !isNaN(radius) &&
+                 Math.abs(lat) <= 90 && Math.abs(lng) <= 180 &&
+                 radius > 0 && radius <= 50000;
+        })
+        .map(item => ({
+          ...item,
+          radius: Math.min(parseFloat(item.radius), 50000),
+          latitude: parseFloat(item.latitude),
+          longitude: parseFloat(item.longitude),
+        }));
+
+      console.log('Validierte Reminder-Daten für Map:', validData.length);
+      setReminderData(validData);
     } catch (error) {
       console.error("Fehler beim Laden der Erinnerungsdaten:", error);
       setReminderData([]);
@@ -177,26 +186,51 @@ const Map = () => {
       const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
       if (foregroundStatus !== 'granted') {
         setErrorMsg('Standortzugriff im Vordergrund verweigert.');
-        Alert.alert('Berechtigung verweigert', 'Bitte gewähren Sie den Zugriff auf den Standort.');
+        // Fallback auf Standard-Position (Zürich)
+        setInitialRegion({
+          latitude: 47.3769,
+          longitude: 8.5417,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        });
+        setLocation({
+          latitude: 47.3769,
+          longitude: 8.5417,
+        });
         setIsLoading(false);
         return;
       }
 
       const currentLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
+        timeout: 10000, // 10 Sekunden Timeout
       });
 
-      setLocation(currentLocation.coords);
-      setInitialRegion({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-        latitudeDelta: 0.005,
-        longitudeDelta: 0.005,
-      });
+      if (currentLocation && currentLocation.coords) {
+        setLocation(currentLocation.coords);
+        setInitialRegion({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        });
+      }
       setIsLoading(false);
     } catch (error) {
       console.error('Fehler beim Laden des Standorts:', error);
       setErrorMsg(`Fehler: ${error.message}`);
+
+      // Fallback auf Standard-Position (Zürich)
+      setInitialRegion({
+        latitude: 47.3769,
+        longitude: 8.5417,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      });
+      setLocation({
+        latitude: 47.3769,
+        longitude: 8.5417,
+      });
       setIsLoading(false);
     }
   };
@@ -238,14 +272,30 @@ const Map = () => {
             console.log('Kein vorheriges Geofencing zu stoppen:', error.message);
           }
 
-          // Starte neues Geofencing mit aktuellen Daten
-          await Location.startGeofencingAsync(GEOFENCING_TASK, reminderData.map(reminder => ({
-            identifier: reminder.title,
-            latitude: reminder.latitude,
-            longitude: reminder.longitude,
-            radius: reminder.radius,
-            notificationMessage: reminder.content,
-          })));
+          // Validiere Reminder-Daten vor Geofencing
+          const validReminders = reminderData.filter(reminder =>
+            reminder &&
+            typeof reminder.latitude === 'number' &&
+            typeof reminder.longitude === 'number' &&
+            typeof reminder.radius === 'number' &&
+            !isNaN(reminder.latitude) &&
+            !isNaN(reminder.longitude) &&
+            !isNaN(reminder.radius) &&
+            reminder.radius > 0 &&
+            reminder.radius <= 10000
+          );
+
+          if (validReminders.length > 0) {
+            // Starte neues Geofencing mit validierten Daten
+            await Location.startGeofencingAsync(GEOFENCING_TASK, validReminders.map(reminder => ({
+              identifier: reminder.title || 'Unnamed Reminder',
+              latitude: reminder.latitude,
+              longitude: reminder.longitude,
+              radius: Math.min(reminder.radius, 10000), // Max 10km
+              notificationMessage: reminder.content || 'Sie haben einen Bereich betreten.',
+            })));
+            console.log(`Geofencing gestartet mit ${validReminders.length} validierten Reminders`);
+          }
         } else {
           console.log('Geofencing wird in Expo Go auf iOS übersprungen (nicht unterstützt).');
         }
@@ -330,18 +380,20 @@ const Map = () => {
         </View>
       ) : initialRegion ? (
         <>
-          <MemoizedMapView
-            style={styles.map}
-            region={initialRegion}
-            showsUserLocation={true}
-            followsUserLocation={followsUser}
-            onRegionChangeComplete={(region) => {
-              if (!followsUser) {
-                setInitialRegion(region);
-              }
-            }}
-            reminderData={reminderData}
-          />
+          <MapErrorBoundary>
+            <SafeMapView
+              style={styles.map}
+              region={initialRegion}
+              showsUserLocation={true}
+              followsUserLocation={followsUser}
+              onRegionChangeComplete={(region) => {
+                if (!followsUser) {
+                  setInitialRegion(region);
+                }
+              }}
+              reminderData={reminderData}
+            />
+          </MapErrorBoundary>
           <TouchableOpacity
             style={styles.locationButton}
             onPress={goToCurrentLocation}
