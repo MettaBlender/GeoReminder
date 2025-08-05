@@ -7,10 +7,12 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 // import MemoizedMapView from '../../../components/MemoizedMapView'; // Google Maps Version
 // import OpenStreetMapView from '../../../components/OpenStreetMapView'; // OpenStreetMap Version
-import SafeMapView from '../../../components/SafeMapView'; // Sichere Map-Komponente
+// import SafeMapView from '../../../components/SafeMapView'; // react-native-maps basiert
+import LeafletWebMap from '../../../components/LeafletWebMap'; // Leaflet WebView basiert
+import FallbackMapView from '../../../components/FallbackMapView'; // Fallback ohne Maps
 import MapErrorBoundary from '../../../components/MapErrorBoundary';
 // import AdvancedOpenStreetMapView from '../../../components/AdvancedOpenStreetMapView'; // Mit Style-Selektor
-// import LeafletMapView from '../../../components/LeafletMapView'; // Leaflet Alternative
+// import LeafletMapView from '../../../components/LeafletMapView'; // Alte Leaflet Alternative
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useFocusEffect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -57,6 +59,7 @@ const Map = () => {
   const [followsUser, setFollowsUser] = useState(false);
   const [hasReminderParams, setHasReminderParams] = useState(false);
   const [lastReminderPosition, setLastReminderPosition] = useState(null);
+  const [usesFallback, setUsesFallback] = useState(false);
 
   const {getItem} = useAsyncStorage('reminder');
   const { getItem: getCurrentUser } = useAsyncStorage('currentUser');
@@ -367,6 +370,12 @@ const Map = () => {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>{errorMsg}</Text>
+        {/* Fallback auch bei Fehlern */}
+        <FallbackMapView
+          reminderData={reminderData}
+          region={initialRegion}
+          style={styles.map}
+        />
       </View>
     );
   }
@@ -381,18 +390,31 @@ const Map = () => {
       ) : initialRegion ? (
         <>
           <MapErrorBoundary>
-            <SafeMapView
-              style={styles.map}
-              region={initialRegion}
-              showsUserLocation={true}
-              followsUserLocation={followsUser}
-              onRegionChangeComplete={(region) => {
-                if (!followsUser) {
-                  setInitialRegion(region);
-                }
-              }}
-              reminderData={reminderData}
-            />
+            {usesFallback ? (
+              <FallbackMapView
+                reminderData={reminderData}
+                region={initialRegion}
+                style={styles.map}
+                showsUserLocation={true}
+              />
+            ) : (
+              <LeafletWebMap
+                style={styles.map}
+                region={initialRegion}
+                showsUserLocation={true}
+                followsUserLocation={followsUser}
+                onRegionChangeComplete={(region) => {
+                  if (!followsUser) {
+                    setInitialRegion(region);
+                  }
+                }}
+                reminderData={reminderData}
+                onPress={(event) => {
+                  // Handle map press if needed
+                  console.log('Map pressed at:', event.nativeEvent.coordinate);
+                }}
+              />
+            )}
           </MapErrorBoundary>
           <TouchableOpacity
             style={styles.locationButton}

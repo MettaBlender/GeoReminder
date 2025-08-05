@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
-import MapView, { Marker, Circle, UrlTile } from 'react-native-maps';
+
+// Bedingte Import-Strategie für bessere Stabilität
+let MapView, Marker, Circle, UrlTile;
+try {
+  const mapComponents = require('react-native-maps');
+  MapView = mapComponents.default;
+  Marker = mapComponents.Marker;
+  Circle = mapComponents.Circle;
+  UrlTile = mapComponents.UrlTile;
+} catch (error) {
+  console.error('react-native-maps konnte nicht geladen werden:', error);
+  MapView = null;
+}
 
 const SafeMapView = ({
   region,
@@ -13,12 +25,22 @@ const SafeMapView = ({
 }) => {
   const [mapError, setMapError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapSupported, setMapSupported] = useState(true);
 
   useEffect(() => {
-    // Timeout für Map-Loading
+    // Prüfe ob Maps verfügbar sind
+    if (!MapView) {
+      console.error('react-native-maps ist nicht verfügbar');
+      setMapSupported(false);
+      setMapError(true);
+      setIsLoading(false);
+      return;
+    }
+
+    // Timeout für Map-Loading - kürzer für Preview-Builds
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 8000);
+    }, 5000); // Reduziert von 8s auf 5s
 
     return () => clearTimeout(timer);
   }, []);
@@ -35,26 +57,35 @@ const SafeMapView = ({
     setMapError(false);
   };
 
-  // Fallback UI wenn Map nicht geladen werden kann
-  if (mapError) {
+  // Fallback UI wenn Map nicht geladen werden kann oder nicht unterstützt wird
+  if (mapError || !mapSupported) {
     return (
       <View style={[styles.errorContainer, style]}>
-        <Text style={styles.errorTitle}>Karte nicht verfügbar</Text>
+        <Text style={styles.errorTitle}>
+          {!mapSupported ? 'Karten-Komponente nicht verfügbar' : 'Karte nicht verfügbar'}
+        </Text>
         <Text style={styles.errorText}>
-          Die Karte konnte nicht geladen werden.{'\n'}
-          Bitte prüfen Sie Ihre Internetverbindung.
+          {!mapSupported
+            ? 'Die Karten-Funktionalität ist in diesem Build nicht verfügbar.'
+            : 'Die Karte konnte nicht geladen werden.\nBitte prüfen Sie Ihre Internetverbindung.'
+          }
         </Text>
         {reminderData.length > 0 && (
           <View style={styles.remindersList}>
             <Text style={styles.remindersTitle}>Ihre Erinnerungen:</Text>
-            {reminderData.slice(0, 3).map((reminder, index) => (
+            {reminderData.slice(0, 5).map((reminder, index) => (
               <Text key={index} style={styles.reminderItem}>
-                📍 {reminder.title}
+                📍 {reminder.title || 'Unbenannte Erinnerung'}
+                {reminder.latitude && reminder.longitude && (
+                  <Text style={styles.reminderCoords}>
+                    {'\n'}📌 {reminder.latitude.toFixed(4)}, {reminder.longitude.toFixed(4)}
+                  </Text>
+                )}
               </Text>
             ))}
-            {reminderData.length > 3 && (
+            {reminderData.length > 5 && (
               <Text style={styles.reminderItem}>
-                +{reminderData.length - 3} weitere...
+                +{reminderData.length - 5} weitere...
               </Text>
             )}
           </View>
@@ -69,6 +100,16 @@ const SafeMapView = ({
       <View style={[styles.loadingContainer, style]}>
         <ActivityIndicator size="large" color="#4CAF50" />
         <Text style={styles.loadingText}>Karte wird geladen...</Text>
+      </View>
+    );
+  }
+
+  // Sichere Map-Rendering nur wenn MapView verfügbar ist
+  if (!MapView || !mapSupported) {
+    return (
+      <View style={[styles.errorContainer, style]}>
+        <Text style={styles.errorTitle}>Karte nicht verfügbar</Text>
+        <Text style={styles.errorText}>Maps sind in diesem Build nicht verfügbar.</Text>
       </View>
     );
   }
@@ -88,23 +129,31 @@ const SafeMapView = ({
         loadingEnabled={true}
         showsMyLocationButton={false}
         toolbarEnabled={false}
-        mapType="none"
+        mapType="none" // Wichtig: Deaktiviert Google Maps API
         moveOnMarkerPress={false}
         showsScale={false}
         showsCompass={false}
+        // Zusätzliche Stabilität für Preview-Builds
+        showsIndoors={false}
+        rotateEnabled={false}
+        scrollEnabled={true}
+        zoomEnabled={true}
         {...otherProps}
       >
-        {/* Sichere Tile-Layer */}
-        <UrlTile
-          urlTemplate="https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png"
-          maximumZ={18}
-          minimumZ={1}
-          flipY={false}
-        />
+        {/* Sichere Tile-Layer - Fallback auf mehrere Server */}
+        {UrlTile && (
+          <UrlTile
+            urlTemplate="https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png"
+            maximumZ={16} // Reduziert für bessere Performance
+            minimumZ={1}
+            flipY={false}
+            shouldReplaceMapContent={true}
+          />
+        )}
 
         {/* Sichere Marker-Rendering */}
         {reminderData && Array.isArray(reminderData) && reminderData.map((reminder, index) => {
-          // Validierung der Reminder-Daten
+          // Erweiterte Validierung der Reminder-Daten
           if (!reminder ||
               typeof reminder.latitude !== 'number' ||
               typeof reminder.longitude !== 'number' ||
@@ -119,22 +168,27 @@ const SafeMapView = ({
           try {
             return (
               <React.Fragment key={reminder.localId || reminder.id || `reminder-${index}`}>
-                <Marker
-                  coordinate={{
-                    latitude: reminder.latitude,
-                    longitude: reminder.longitude,
-                  }}
-                  title={reminder.title || 'Erinnerung'}
-                  description={reminder.content || ''}
-                  pinColor="#4CAF50"
-                />
-                {reminder.radius && reminder.radius > 0 && (
+                {Marker && (
+                  <Marker
+                    coordinate={{
+                      latitude: reminder.latitude,
+                      longitude: reminder.longitude,
+                    }}
+                    title={reminder.title || 'Erinnerung'}
+                    description={reminder.content || ''}
+                    pinColor="#4CAF50"
+                    // Zusätzliche Stabilität
+                    flat={false}
+                    draggable={false}
+                  />
+                )}
+                {Circle && reminder.radius && reminder.radius > 0 && (
                   <Circle
                     center={{
                       latitude: reminder.latitude,
                       longitude: reminder.longitude,
                     }}
-                    radius={Math.min(reminder.radius, 10000)} // Max 10km für Stabilität
+                    radius={Math.min(reminder.radius, 5000)} // Reduziert für Preview-Builds
                     strokeColor="rgba(76, 175, 80, 0.8)"
                     fillColor="rgba(76, 175, 80, 0.3)"
                     strokeWidth={2}
@@ -152,7 +206,12 @@ const SafeMapView = ({
   } catch (error) {
     console.error('MapView Render-Fehler:', error);
     setMapError(true);
-    return null;
+    return (
+      <View style={[styles.errorContainer, style]}>
+        <Text style={styles.errorTitle}>Karte konnte nicht gerendert werden</Text>
+        <Text style={styles.errorText}>Fehler: {error.message}</Text>
+      </View>
+    );
   }
 };
 
@@ -203,7 +262,13 @@ const styles = StyleSheet.create({
   reminderItem: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 5,
+    marginBottom: 8,
+    paddingLeft: 5,
+  },
+  reminderCoords: {
+    fontSize: 12,
+    color: '#999',
+    fontFamily: 'monospace',
   },
 });
 

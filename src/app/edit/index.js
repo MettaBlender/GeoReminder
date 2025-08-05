@@ -1,7 +1,6 @@
 import { View, ScrollView, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import SafeMapView from '@/components/SafeMapView';
-import { Marker } from 'react-native-maps';
+import LeafletWebMap from '@/components/LeafletWebMap';
 import * as Location from 'expo-location';
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import SearchBar from '@/components/SearchBar';
@@ -376,9 +375,9 @@ const EditReminder = () => {
                   <Text style={styles.mapLoadingText}>Karte wird geladen...</Text>
                 </View>
               ) : (
-                <SafeMapView
+                <LeafletWebMap
                   style={styles.map}
-                  initialRegion={{
+                  region={{
                     latitude: parseFloat(data.latitude) || location.latitude,
                     longitude: parseFloat(data.longitude) || location.longitude,
                     latitudeDelta: 0.01,
@@ -386,19 +385,14 @@ const EditReminder = () => {
                   }}
                   showsUserLocation={true}
                   onPress={handleMapPress}
-                >
-                  {parseFloat(data.latitude) !== 0.0 && parseFloat(data.longitude) !== 0.0 && (
-                    <Marker
-                      coordinate={{
-                        latitude: parseFloat(data.latitude),
-                        longitude: parseFloat(data.longitude),
-                      }}
-                      title={data.title || 'Neuer Pin'}
-                      description={data.content || 'Von Nutzer gesetzt'}
-                      pinColor="green"
-                    />
-                  )}
-                </SafeMapView>
+                  reminderData={parseFloat(data.latitude) !== 0.0 && parseFloat(data.longitude) !== 0.0 ? [{
+                    latitude: parseFloat(data.latitude),
+                    longitude: parseFloat(data.longitude),
+                    title: data.title || 'Neuer Pin',
+                    content: data.content || 'Von Nutzer gesetzt',
+                    radius: parseFloat(data.radius) || 100
+                  }] : []}
+                />
               )}
               <CoordinateInput
                 latitude={data.latitude}

@@ -1,7 +1,6 @@
 import { View, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform, Alert, Text, KeyboardAvoidingView, ScrollView } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import SafeMapView from '../../../components/SafeMapView';
-import { Marker } from 'react-native-maps';
+import LeafletWebMap from '../../../components/LeafletWebMap';
 import * as Location from 'expo-location';
 import { useAsyncStorage } from '@react-native-async-storage/async-storage';
 import SearchBar from '../../../components/SearchBar';
@@ -272,30 +271,24 @@ const Index = () => {
                   handleSelectPlace={handleSelectPlace}
                 />
 
-                <SafeMapView
+                <LeafletWebMap
                   style={styles.map}
-                  initialRegion={{
+                  region={{
                     latitude: location.latitude,
                     longitude: location.longitude,
                     latitudeDelta: 0.01,
                     longitudeDelta: 0.01,
                   }}
-                  region={location.region}
                   showsUserLocation={true}
                   onPress={handleMapPress}
-                >
-                  {parseFloat(latitude) !== 0.0 && parseFloat(longitude) !== 0.0 && (
-                    <Marker
-                      coordinate={{
-                        latitude: parseFloat(latitude),
-                        longitude: parseFloat(longitude),
-                      }}
-                      title={title || 'Neuer Pin'}
-                      description={content || 'Von Nutzer gesetzt'}
-                      pinColor="#4CAF50"
-                    />
-                  )}
-                </SafeMapView>
+                  reminderData={parseFloat(latitude) !== 0.0 && parseFloat(longitude) !== 0.0 ? [{
+                    latitude: parseFloat(latitude),
+                    longitude: parseFloat(longitude),
+                    title: title || 'Neuer Pin',
+                    content: content || 'Von Nutzer gesetzt',
+                    radius: parseFloat(radius) || 100
+                  }] : []}
+                />
 
                 <CoordinateInput
                   latitude={latitude}
