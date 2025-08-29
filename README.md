@@ -1,7 +1,7 @@
 # 📌 GeoReminder  
 > Location-based reminders that notify you when it matters — where it matters.
 
-<img src="assets/hero-demo.gif" alt="Hero Demo" width="28%"/>
+<img src="assets/hero-demo.gif" alt="Hero Demo" width="40%"/>
 
 ---
 
@@ -13,7 +13,7 @@
 - Add a title and description  
 - Save it locally or sync with your account  
 
-<img src="assets/create-reminder.gif" alt="Create Reminder" width="28%"/>
+<img src="assets/create-reminder.gif" alt="Create Reminder" width="40%"/>
 
 ---
 
@@ -22,7 +22,7 @@
 - Zoom and pan across the map  
 - Click pins to view reminder info  
 
-<img src="assets/map-overview.gif" alt="Map Overview" width="28%"/>
+<img src="assets/map-overview.gif" alt="Map Overview" width="40%"/>
 
 ---
 
@@ -30,7 +30,7 @@
 - Tap edit icon to change title, radius, or position  
 - Easily remove outdated reminders  
 
-<img src="assets/edit-delete.gif" alt="Edit Delete Reminder" width="28%"/>
+<img src="assets/edit-delete.gif" alt="Edit Delete Reminder" width="40%"/>
 
 ---
 
@@ -38,7 +38,7 @@
 - Triggers a reminder when entering the defined area  
 - Works seamlessly in the background  
 
-<img src="assets/geofence-notification.gif" alt="Geofence Notification" width="28%"/>
+<img src="assets/geofence-notification.gif" alt="Geofence Notification" width="40%"/>
 
 ---
 
@@ -47,7 +47,7 @@
 - Log in to sync reminders with backend  
 - Conflict-resilient two-way sync  
 
-<img src="assets/sync-reminders.gif" alt="Sync Reminders" width="28%"/>
+<img src="assets/sync-reminders.gif" alt="Sync Reminders" width="40%"/>
 
 ---
 
@@ -57,13 +57,13 @@
 - Intuitive tab navigation  
 - Tailwind-powered styling (Nativewind)
 
-<img src="assets/ui-transitions.gif" alt="UI Transitions" width="28%"/>
+<img src="assets/ui-transitions.gif" alt="UI Transitions" width="40%"/>
 
 ---
 
 ## 🖼️ Homepage Screenshot
 
-<img src="assets/homepage-screenshot.jpg" alt="Home Screen" width="28%"/>
+<img src="assets/homepage-screenshot.jpg" alt="Home Screen" width="40%"/>
 
 ---
 
