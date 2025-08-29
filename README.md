@@ -1,5 +1,5 @@
 # 📌 GeoReminder  
-> Location-based reminders that notify you when it matters — where it matters.
+> Location-based reminders that notify you when it matters, where it matters.
 
 <img src="assets/hero-demo.gif" alt="Hero Demo" width="35%"/>
 
@@ -74,7 +74,7 @@
 - Jonas Schären  
 - Loris Stahlberg  
 
-The app solves a common problem: time-based reminders often trigger at the wrong moment because you don’t know exactly when you’ll be somewhere. GeoReminder ties reminders to locations — so you’re reminded exactly when you arrive at the right place.
+The app solves a common problem: time-based reminders often trigger at the wrong moment because you don’t know exactly when you’ll be somewhere. GeoReminder ties reminders to locations, so you’re reminded exactly when you arrive at the right place.
 
 ---
 
