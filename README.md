@@ -1,74 +1,158 @@
-# GeoReminder
+# 📌 GeoReminder  
+> Location-based reminders that notify you when it matters — where it matters.
 
-GeoReminder is a cross-platform mobile app (React Native + Expo) for location-based reminders. Create, edit, and delete reminders that trigger notifications when you enter a defined area. Works offline and syncs with a Node.js/Postgres backend when logged in.
+![Hero Demo](assets/hero-demo.gif)
 
-## Features
+---
 
-- Create, edit, and delete geo-reminders with title, content, location, and radius
-- Works fully offline (reminders stored locally)
-- Syncs reminders with backend when logged in (bidirectional, conflict-resilient)
-- Each reminder has a unique ID (multiple reminders with same title possible)
-- Map view with all reminders and geofencing
-- No alerts after creating a reminder; input fields are cleared
-- Home screen triggers backend sync; all other screens use only local data
-- Modern UI with Nativewind (Tailwind CSS for React Native)
+## ✨ Key Features
 
-## Tech Stack
+### 📍 Create Geo-Reminders  
+- Select any place on the map  
+- Define a radius (e.g., 500 meters)  
+- Add a title and description  
+- Save it locally or sync with your account  
 
-- **Frontend:** React Native, Expo, Nativewind, AsyncStorage
-- **Backend:** Node.js, Express, PostgreSQL (NeonDB), JWT Auth
+![Create Reminder](assets/create-reminder.gif)
 
-## Getting Started
+---
 
-### Prerequisites
-- Node.js (LTS)
-- Expo CLI (`npm install -g expo-cli`)
-- PostgreSQL database (NeonDB or local)
+### 🗺️ View All Reminders on a Map  
+- Visualize all created reminders as pins  
+- Zoom and pan across the map  
+- Click pins to view reminder info  
 
-### Setup
+![Map Overview](assets/map-overview.gif)
 
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/MettaBlender/GeoReminder
-   cd GeoReminder
-   ```
+---
 
-2. **Install dependencies:**
-   ```sh
-   cd GeoReminder
-   npm install
-   cd ../GeoReminderBackend
-   npm install
-   ```
+### 📝 Edit or Delete Reminders  
+- Tap edit icon to change title, radius, or position  
+- Easily remove outdated reminders  
 
-3. **Configure environment variables:**
-   - Copy `.env.example` to `.env` in `GeoReminderBackend` and set your database and JWT secrets.
+![Edit Delete Reminder](assets/edit-delete.gif)
 
-4. **Run the backend:**
-   ```sh
-   cd GeoReminderBackend
-   node server.js
-   ```
+---
 
-5. **Run the app:**
-   ```sh
-   cd ../GeoReminder
-   npx expo start
-   ```
+### 🔔 Location-Based Notifications  
+- Triggers a reminder when entering the defined area  
+- Works seamlessly in the background  
 
-## Usage
+![Geofence Notification](assets/geofence-notification.gif)
 
-- Register or log in to sync reminders with the backend.
-- Create reminders with a title, content, location (via map or search), and radius.
-- Reminders work offline and sync automatically when you return to the Home screen while logged in.
-- View all reminders on the map; geofencing notifications are triggered when entering a reminder area.
+---
 
-## Data Flow
+### 📶 Offline First, Online Sync  
+- Fully usable offline with local storage  
+- Log in to sync reminders with backend  
+- Conflict-resilient two-way sync  
 
-- All reminder operations use unique IDs (localId/serverId)
-- Home screen triggers backend sync; other screens only update local data
-- See `DATAFLOW_SUMMARY.md` for detailed data flow and sync logic
+![Sync Reminders](assets/sync-reminders.gif)
 
-## License
+---
 
-MIT
+## 🎨 UI & Interaction Highlights
+
+- Smooth transitions and animations  
+- Intuitive tab navigation  
+- Tailwind-powered styling (Nativewind)
+
+![UI Transitions](assets/ui-transitions.gif)
+
+---
+
+## 🖼️ Homepage Screenshot
+
+![Home Screen](assets/homepage-screenshot.png)
+
+---
+
+## 🎯 Project Context
+
+📘 **GeoReminder** was developed as part of a **3-day school project** by a team of three developers:  
+- Aaron Mettler  
+- Jonas Schären  
+- Loris Stahlberg  
+
+The app solves a common problem: time-based reminders often trigger at the wrong moment because you don’t know exactly when you’ll be somewhere. GeoReminder ties reminders to locations — so you’re reminded exactly when you arrive at the right place.
+
+---
+
+## 🧰 Tech Stack
+
+**Frontend:**  
+- React Native  
+- Expo  
+- Nativewind (Tailwind CSS for RN)  
+- AsyncStorage  
+
+**Backend:**  
+- Node.js  
+- Express  
+- PostgreSQL (NeonDB)  
+- JWT Authentication  
+
+---
+
+## 📂 Data Flow  
+
+For a detailed overview of how local storage, backend sync, and IDs are managed, see [DATAFLOW_SUMMARY.md](DATAFLOW_SUMMARY.md).  
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites  
+- Node.js (LTS)  
+- Expo CLI (`npm install -g expo-cli`)  
+- PostgreSQL (NeonDB or local setup)
+
+---
+
+### Setup Instructions
+
+```bash
+# Clone both frontend and backend
+git clone https://github.com/YourUser/GeoReminder
+cd GeoReminder
+
+# Install frontend dependencies
+npm install
+
+# Navigate to backend and install
+cd ../GeoReminderBackend
+npm install
+
+# Add environment variables
+cp .env.example .env
+# → Fill in DB_URL, JWT_SECRET, etc.
+
+# Start the backend
+node server.js
+
+# Start the frontend
+cd ../GeoReminder
+npx expo start
+```
+---
+
+## 🧪 How It Works (Behind the Scenes)
+
+- The user sets a location and radius → stored as coordinates  
+- Geofencing logic compares current GPS to saved zones  
+- When entering a zone, a notification is triggered  
+- Reminders are stored locally via AsyncStorage  
+- Optional login syncs reminders via REST API to PostgreSQL  
+- Sync logic is bidirectional and conflict-resilient  
+
+---
+
+<!-- ## 📜 License  
+
+This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.  
+
+--- -->
+
+## ✍️ Note  
+
+README made by **Loris Stahlberg**  
