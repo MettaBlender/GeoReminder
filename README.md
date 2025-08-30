@@ -5,9 +5,9 @@
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 📍 Create Geo-Reminders  
+### Create Geo-Reminders  
 - Select any place on the map  
 - Define a radius (e.g., 500 meters)  
 - Add a title and description  
