@@ -1,4 +1,4 @@
-# 📌 GeoReminder  
+# GeoReminder  
 > Location-based reminders that notify you when it matters, where it matters.
 
 <img src="assets/hero-demo.gif" alt="Hero Demo" width="35%"/>
@@ -17,7 +17,7 @@
 
 ---
 
-### 🗺️ View All Reminders on a Map  
+### View All Reminders on a Map  
 - Visualize all created reminders as pins  
 - Zoom and pan across the map  
 - Click pins to view reminder info  
@@ -26,7 +26,7 @@
 
 ---
 
-### 📝 Edit or Delete Reminders  
+### Edit or Delete Reminders  
 - Tap edit icon to change title, radius, or position  
 - Easily remove outdated reminders  
 
@@ -34,7 +34,7 @@
 
 ---
 
-### 🔔 Location-Based Notifications  
+### Location-Based Notifications  
 - Triggers a reminder when entering the defined area  
 - Works seamlessly in the background  
 
@@ -42,7 +42,7 @@
 
 ---
 
-### 📶 Offline First, Online Sync  
+### Offline First, Online Sync  
 - Fully usable offline with local storage  
 - Log in to sync reminders with backend  
 - Conflict-resilient two-way sync  
@@ -51,7 +51,7 @@
 
 ---
 
-## 🎨 UI & Interaction Highlights
+## UI & Interaction Highlights
 
 - Smooth transitions and animations  
 - Intuitive tab navigation  
@@ -61,15 +61,15 @@
 
 ---
 
-## 🖼️ Homepage Screenshot
+## Homepage Screenshot
 
 <img src="assets/homepage-screenshot.jpg" alt="Home Screen" width="35%"/>
 
 ---
 
-## 🎯 Project Context
+## Project Context
 
-📘 **GeoReminder** was developed as part of a **3-day school project** by a team of three developers:  
+**GeoReminder** was developed as part of a **3-day school project** by a team of three developers:  
 - Aaron Mettler  
 - Jonas Schären  
 - Loris Stahlberg  
@@ -78,7 +78,7 @@ The app solves a common problem: time-based reminders often trigger at the wrong
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 **Frontend:**  
 - React Native  
@@ -94,13 +94,13 @@ The app solves a common problem: time-based reminders often trigger at the wrong
 
 ---
 
-## 📂 Data Flow  
+## Data Flow  
 
 For a detailed overview of how local storage, backend sync, and IDs are managed, see [DATAFLOW_SUMMARY.md](DATAFLOW_SUMMARY.md).  
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites  
 - Node.js (LTS)  
@@ -136,7 +136,7 @@ npx expo start
 ```
 ---
 
-## 🧪 How It Works (Behind the Scenes)
+## How It Works (Behind the Scenes)
 
 - The user sets a location and radius → stored as coordinates  
 - Geofencing logic compares current GPS to saved zones  
@@ -153,6 +153,6 @@ This project is licensed under the **MIT License** – see the [LICENSE](LICENSE
 
 --- -->
 
-## ✍️ Note  
+## Note  
 
 README made by **Loris Stahlberg**  
